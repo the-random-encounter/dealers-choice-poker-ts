@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { SUIT_CHARS, RANK_CHARS } from '../utils/constants';
 
 export class Preloader extends Scene
 {
@@ -33,6 +34,16 @@ export class Preloader extends Scene
         this.load.setPath('assets');
 
         this.load.image('logo', 'logo.png');
+        this.load.image('logo_wide', 'logo_wide.png');
+        this.load.image('logo_tall', 'logo_tall.png');
+
+        this.load.image('cardback',"../assets/cardback.png");
+        this.load.image('table','../assets/table.png');
+      
+        for (const s of SUIT_CHARS) {
+          for (const r of RANK_CHARS)
+            this.load.image(`${r}${s}`, `../assets/cards_en/${r}${s}.png`);
+        }
     }
 
     create ()

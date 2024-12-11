@@ -1,4 +1,6 @@
 import { Scene } from 'phaser';
+import Deck from '../classes/Deck';
+//import Card from '../Card';
 
 export class Game extends Scene
 {
@@ -19,17 +21,25 @@ export class Game extends Scene
         this.background = this.add.image(512, 384, 'background');
         this.background.setAlpha(0.5);
 
-        this.msg_text = this.add.text(512, 384, 'Make something fun!\nand share it with us:\nsupport@phaser.io', {
-            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 8,
+        this.add.image(512, 384, 'table');
+        const dealButton = this.add.text(800,50, 'DEAL', {
+            fontFamily: 'Arial Black', fontSize: 72, color: '#ffffff',
+            stroke: '#FF0000', strokeThickness: 6,
             align: 'center'
-        });
-        this.msg_text.setOrigin(0.5);
+        }).setOrigin(0.5).setInteractive();
 
-        this.input.once('pointerdown', () => {
+        dealButton.on('pointerdown', () => {
+            const deck = new Deck();
+            
+            for (const card of deck)
+              console.log(card.name);
+            
+            deck.shuffleDeck();
 
-            this.scene.start('GameOver');
+            console.log(`----------------------------------------------------------------\mSHUFFLED THE DECK\n----------------------------------------------------------------`);
 
-        });
+            for (const card of deck)
+              console.log(card.name);
+        })
     }
 }
