@@ -1,3 +1,5 @@
+import { GAME_HEIGHT, GAME_WIDTH } from "./utils/constants";
+
 import { Boot } from './scenes/Boot';
 import { Game as MainGame } from './scenes/Game';
 import { GameOver } from './scenes/GameOver';
@@ -10,8 +12,8 @@ import { Game, Types } from "phaser";
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config: Types.Core.GameConfig = {
     type: Phaser.AUTO,
-    width: 1024,
-    height: 768,
+    width: GAME_HEIGHT,
+    height: GAME_WIDTH,
     parent: 'game-container',
     backgroundColor: '#028af8',
     scale: {
