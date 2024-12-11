@@ -21,6 +21,7 @@ README.md
 .codiumai.toml
 .eslintrc.js
 jest.config.ts
+tsconfig.json
 
 screenshot.png
 misc/
