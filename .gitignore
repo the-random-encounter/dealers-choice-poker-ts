@@ -13,3 +13,14 @@ node_modules/
 # Build
 dist/
 /npm-debug.log
+
+.babelrc
+LICENSE
+log.js
+README.md
+.codiumai.toml
+.eslintrc.js
+jest.config.ts
+
+screenshot.png
+misc/
