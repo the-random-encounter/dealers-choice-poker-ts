@@ -6,7 +6,8 @@
     "dev": "node log.js dev & webpack-dev-server --config webpack/config.dev.js --open",
     "build": "node log.js build & webpack --config webpack/config.prod.js",
     "dev-nolog": "webpack-dev-server --config webpack/config.dev.js --open",
-    "build-nolog": "webpack --config webpack/config.prod.js"
+    "build-nolog": "webpack --config webpack/config.prod.js",
+    "test": "npx jest"
   },
   "repository": {
     "type": "git",
@@ -35,6 +36,7 @@
     "terser-webpack-plugin": "^5.3.10",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4",
@@ -44,5 +46,8 @@
   "dependencies": {
     "phaser": "^3.87.0"
   },
+  "transform": {
+      "\\.js$": "<rootDir>/node_modules/babel-jest"
+    },
   "description": "This is a Phaser 3 project to create an online poker game that supports dealer's choice: players will be able to author and deal their own poker gametypes, either beforehand or during live play."
 }
