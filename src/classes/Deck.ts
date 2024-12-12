@@ -1,6 +1,30 @@
 
 import Card from './Card';
-import { Suit, Rank } from '../utils/constants';
+import { Suit, Rank } from '../utils/types';
+
+interface Flop {
+  cardOne: Card;
+  cardTwo: Card;
+  cardThree: Card;
+}
+
+interface Turn {
+  card: Card;
+}
+
+interface River {
+  card: Card;
+}
+
+interface SingleBoard {
+  flop: Flop;
+  turn: Turn;
+  river: River;
+}
+interface TableState {
+  gameBoard: SingleBoard[],
+  playerBoards: PlayerBoard[]
+}
 
 export default class Deck {
 
@@ -58,5 +82,9 @@ export default class Deck {
         [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
     }
     return;
+  }
+
+  dealCards(tableState: TableState, playerArray: Players[]): void {
+
   }
 }
