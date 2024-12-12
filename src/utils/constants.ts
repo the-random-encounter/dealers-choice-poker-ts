@@ -26,6 +26,30 @@ export const SUIT_VALUES = {
   spades:   4
 }
 
+export const SUIT = {
+  HEARTS: 'hearts',
+  DIAMONDS: 'diamonds',
+  CLUBS: 'clubs',
+  SPADES: 'spades'
+}
+
+export const RANK = {
+  ACE: 'ace',
+  TWO: 'two',
+  THREE: 'three',
+  FOUR: 'four',
+  FIVE: 'five',
+  SIX: 'six',
+  SEVEN: 'seven',
+  EIGHT: 'eight',
+  NINE: 'nine',
+  TEN: 'ten',
+  JACK: 'jack',
+  QUEEN: 'queen',
+  KING: 'king',
+  WILD: 'wild'
+}
+
 // Game window dimensions
 export const GAME_WIDTH   = 1900;
 export const GAME_HEIGHT  = 1000;
