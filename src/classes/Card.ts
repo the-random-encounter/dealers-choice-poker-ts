@@ -1,6 +1,19 @@
 import { isRankOrSuit, isCardName } from '../utils/cardFunctions';
 import { Suit, Rank, CardName, RankValue } from '../utils/types';
 
+
+/**
+ * Represents a playing card.
+ * @class
+ * @param arg1 - Can be a Rank, Suit, RankValue, or CardName.
+ * @param arg2 - Can be a Rank, RankValue, or Suit.
+ * @example <caption>Creating a new Card instance with a Rank and Suit</caption>
+ * const card = new Card('ace', 'hearts'); // Ace of Hearts
+ * @example <caption>Creating a new Card instance with a RankValue and Suit</caption>
+ * const card = new Card(12, 'diamonds'); // Queen of Diamonds
+ * @example <caption>Creating a new Card instance with a CardName</caption>
+ * const card = new Card('JS'); // Jack of Spades
+ */
 export default class Card {
   suit:   Suit;
   rank:   Rank;
@@ -9,6 +22,7 @@ export default class Card {
 
   /**
    * Constructs a new Card instance.
+   * @constructor
    * @param arg1 - Can be a Rank, Suit, RankValue, or CardName.
    * @param arg2 - Can be a Rank, RankValue, or Suit.
    */
@@ -193,6 +207,16 @@ export default class Card {
       case 'ace':   return 14;
       case 'wild':  return 100;
       default: throw new Error(`Invalid rank value: ${rank}`);
+    }
+  }
+
+  suitValue(): number {
+    switch (this.suit) {
+      case 'hearts':   return 1;
+      case 'diamonds': return 2;
+      case 'clubs':    return 3;
+      case 'spades':   return 4;
+      default: throw new Error(`Invalid suit value: ${this.suit}`);
     }
   }
 
