@@ -1,4 +1,7 @@
-import { Suit, Rank, CardName, RankValue } from './types';
+import { Suit, Rank, CardName, RankValue, Hand as HandType } from './types';
+import { SUIT, RANK } from './constants';
+import Card from '../classes/Card';
+import Hand from '../classes/Hand';
 
 export function getCardName(suit: Suit, rank: Rank): string {
   let r, s = '';
@@ -46,4 +49,97 @@ export function isRankOrSuit(value: any): value is Rank | Suit {
   const ranks: Array<Rank | RankValue> = ['ace', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'jack', 'queen', 'king', 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
   
   return suits.includes(value) || ranks.includes(value);
+}
+
+export function generateRandomSuit(): Suit {
+    const suits: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
+    return suits[Math.floor(Math.random() * suits.length)];
+  }
+
+export function generateRandomRank(): Rank {
+    const ranks: Rank[] = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'jack', 'queen', 'king', 'ace'];
+    return ranks[Math.floor(Math.random() * ranks.length)];
+  }
+
+export function generateRandomHand(): HandType {
+    const hand: HandType = [];
+    for (let i = 0; i < 5; i++) {
+      const card = new Card(generateRandomRank(), generateRandomSuit())
+      hand.push(card);
+    }
+    return hand;
+  }
+
+export function evaluateHand(hand: Hand): any {
+    
+  let testHand: HandType = [];
+  for (let i = 0; i < 5; i++) {
+    const card = new Card(generateRandomRank(), generateRandomSuit());
+    testHand.push(card);
+  }
+
+  // Histogram
+  // { rank: count }
+
+  // Initialize empty histogram object
+  const histogram: {[key in RankValue]?: number} = {};
+
+  // 
+  testHand.reduce((histogram, card) => {
+    histogram[card.value as RankValue] = (histogram[card.value as RankValue] || 0) + 1;
+    return histogram;
+  }, histogram);
+
+  // Scored histogram
+  // Descending by count
+  // [ [ rank, count ] ]
+
+  const scoredHistogram = Object
+    .keys(histogram)
+    .map(rank => [parseInt(rank), histogram[rank as unknown as RankValue]])
+    .sort((a, b) => (a[1] ?? 0) === (b[1] ?? 0) ? (b[0] ?? 0) - (a[0] ?? 0) : (b[1] ?? 0) - (a[1] ?? 0));
+
+  // Suits
+  // [ suit: count ]
+
+  const suits = testHand.reduce((suits, card) => {
+    suits[card.suitValue()]++;
+    return suits;
+  }, [0,0,0,0]);
+
+  // Ranked Hand
+  // (descending by rank)
+  // [ index : rank ]
+
+  const rankedHand = testHand.map(card => card.value).sort((a, b) => a - b);
+
+  // Scoring
+
+  const isFlush = suits.indexOf(5) >= 0;
+  const isWheel = rankedHand[4] === 14 && rankedHand[0] === 2;
+  const isStraight = (
+    rankedHand[4] - rankedHand[3] === 1 || isWheel
+  ) && (
+    rankedHand[3] - rankedHand[2] === 1 &&
+    rankedHand[2] - rankedHand[1] === 1 &&
+    rankedHand[1] - rankedHand[0] === 1
+  );
+
+  // Final Evaluation Chain
+  // Starting with Royal Flush and working downwards
+  // Using ternary operators to chain evaluations together
+
+  const bestHand = 
+    (isStraight && isFlush && rankedHand[4] === 14 && !isWheel)   ? 'Royal Flush'
+  : (isStraight && isFlush)                                       ? `Straight Flush ${isWheel ? '(Wheel)' : ''}`
+  : (scoredHistogram[0][1] === 4)                                 ? 'Four of a Kind'
+  : (scoredHistogram[0][1] === 3 && scoredHistogram[1][1] === 2)  ? 'Full House'
+  : (isFlush)                                                     ? 'Flush'
+  : (isStraight)                                                  ? `Straight ${isWheel ? '(Wheel)' : ''}`
+  : (scoredHistogram[0][1] === 3 && scoredHistogram[1][1] === 1)  ? 'Three of a Kind'
+  : (scoredHistogram[0][1] === 2 && scoredHistogram[1][1] === 2)  ? 'Two Pair'
+  : (scoredHistogram[0][1] === 2 && scoredHistogram[1][1] === 1)  ? 'Pair'
+  :                                                                 `High Card (${scoredHistogram[0][0]})`;
+
+  return bestHand;
 }
