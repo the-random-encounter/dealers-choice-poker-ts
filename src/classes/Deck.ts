@@ -1,6 +1,6 @@
-
 import Card from './Card';
 import { Suit, Rank } from '../utils/types';
+import Hand from './Hand';
 
 interface Flop {
   cardOne: Card;
@@ -86,5 +86,13 @@ export default class Deck {
 
   dealCards(tableState: TableState, playerArray: Players[]): void {
 
+  }
+
+  dealHand(): Hand {
+    if (this.cards.length < 5) {
+      throw new Error('Not enough cards to deal a hand.');
+    }
+    const handCards = this.cards.splice(0, 5);
+    return new Hand(handCards);
   }
 }
