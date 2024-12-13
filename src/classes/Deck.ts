@@ -23,7 +23,7 @@ interface SingleBoard {
 }
 interface TableState {
   gameBoard: SingleBoard[],
-  playerBoards: PlayerBoard[]
+  playerBoards: any//PlayerBoard[]
 }
 
 export default class Deck {
@@ -75,6 +75,13 @@ export default class Deck {
     return cardArray;
   }
 
+  regenerateDeck(): void {
+
+    this.cards = [];
+
+    this.cards = this.generateDeck();
+  }
+
   shuffleDeck(): void {
     // Shuffle deck using Fisher-Yates
     for (let i = this.cards.length; i > 0; i--) {
@@ -84,9 +91,11 @@ export default class Deck {
     return;
   }
 
-  dealCards(tableState: TableState, playerArray: Players[]): void {
-
-  }
+  /**
+    dealCards(tableState: TableState, playerArray: Players[]): void {
+  
+    }
+  */
 
   dealHand(): Hand {
     if (this.cards.length < 5) {

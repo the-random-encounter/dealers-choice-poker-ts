@@ -84,7 +84,7 @@ export function evaluateHand(hand: Hand): any {
   // Initialize empty histogram object
   const histogram: {[key in RankValue]?: number} = {};
 
-  // 
+  // Iterate over cards in hand array and increment counter for each RankValue present
   testHand.reduce((histogram, card) => {
     histogram[card.value as RankValue] = (histogram[card.value as RankValue] || 0) + 1;
     return histogram;
@@ -113,16 +113,16 @@ export function evaluateHand(hand: Hand): any {
 
   const rankedHand = testHand.map(card => card.value).sort((a, b) => a - b);
 
-  // Scoring
+  // sortCardsByDescendingValueer
 
-  const isFlush = suits.indexOf(5) >= 0;
-  const isWheel = rankedHand[4] === 14 && rankedHand[0] === 2;
-  const isStraight = (
-    rankedHand[4] - rankedHand[3] === 1 || isWheel
+  const isFlush     = suits.indexOf(5) >= 0;
+  const isWheel     = rankedHand[4] === 14 && rankedHand[0] === 2;
+  const isStraight  = (
+    rankedHand[4]   - rankedHand[3] === 1 || isWheel
   ) && (
-    rankedHand[3] - rankedHand[2] === 1 &&
-    rankedHand[2] - rankedHand[1] === 1 &&
-    rankedHand[1] - rankedHand[0] === 1
+    rankedHand[3]   - rankedHand[2] === 1 &&
+    rankedHand[2]   - rankedHand[1] === 1 &&
+    rankedHand[1]   - rankedHand[0] === 1
   );
 
   // Final Evaluation Chain

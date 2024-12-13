@@ -20,6 +20,34 @@ export default class Hand {
 
   countCardsByValue(cardValue: number  | string): number {
     
+    if (typeof cardValue === 'string') {
+      switch (cardValue) {
+        case 'A':
+        case 'ace':
+          cardValue = 14;
+          break;
+        case 'K':
+        case 'king':
+          cardValue = 13;
+          break;
+        case 'Q':
+        case 'queen':
+          cardValue = 12;
+          break;
+        case 'J':
+        case 'jack':
+          cardValue = 11;
+          break;
+        case 'T':
+        case 'ten':
+          cardValue = 10;
+          break;
+        default:
+          cardValue = parseInt(cardValue);
+          break;
+
+      }
+    }
     let numCardsFound = 0;
 
     for (const card of this.cards) {

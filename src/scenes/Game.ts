@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
 import Deck from '../classes/Deck';
-//import Card from '../Card';
+import Card from '../classes/Card';
 
 export class Game extends Scene
 {
@@ -22,6 +22,7 @@ export class Game extends Scene
         this.background.setAlpha(0.5);
 
         this.add.image(512, 384, 'table');
+        
         const dealButton = this.add.text(800,50, 'DEAL', {
             fontFamily: 'Arial Black', fontSize: 72, color: '#ffffff',
             stroke: '#FF0000', strokeThickness: 6,

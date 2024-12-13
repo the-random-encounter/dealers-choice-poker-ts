@@ -23,10 +23,24 @@ export class MainMenu extends Scene
             align: 'center'
         }).setOrigin(0.5);
 
-        this.input.once('pointerdown', () => {
+        const Game = this.add.text(512, 660, 'Game', {
+            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 8,
+            align: 'center'
+        }).setOrigin(0.5).setInteractive();
 
+        Game.on('pointerdown', () => {
             this.scene.start('Game');
+        });
 
+        const debugButton = this.add.text(800,50, 'DEBUG', {
+            fontFamily: 'Arial Black', fontSize: 72, color: '#ffffff',
+            stroke: '#FF0000', strokeThickness: 6,
+            align: 'center'
+        }).setOrigin(0.5).setInteractive();
+
+        debugButton.on('pointerdown', () => {
+          this.scene.start('Debug');
         });
     }
 }
