@@ -1,6 +1,6 @@
-import { isRankOrSuit, isCardName } from '../utils/cardFunctions';
+import { isRankOrSuit, isCardName } from '../utils/functions';
 import { Suit, Rank, CardName, RankValue } from '../utils/types';
-
+import * as CONSTS from '../utils/constants';
 
 /**
  * Represents a playing card.

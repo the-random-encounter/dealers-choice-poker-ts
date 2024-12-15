@@ -1,4 +1,4 @@
-import { GAME_HEIGHT, GAME_WIDTH } from "./utils/constants";
+import * as CONSTS from './utils/constants';
 
 import { Debug } from './scenes/Debug';
 import { Boot } from './scenes/Boot';
@@ -14,8 +14,8 @@ import { Game, Types } from "phaser";
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config: Types.Core.GameConfig = {
     type: Phaser.AUTO,
-    width: GAME_HEIGHT,
-    height: GAME_WIDTH,
+    width: CONSTS.GAME_WIDTH,
+    height: CONSTS.GAME_HEIGHT,
     parent: 'game-container',
     backgroundColor: '#028af8',
     scale: {

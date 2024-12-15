@@ -1,6 +1,8 @@
 import Card from './Card';
-import { Suit, Rank } from '../utils/types';
 import Hand from './Hand';
+import { Suit, Rank, Board } from '../utils/types';
+
+import * as CONSTS from '../utils/constants';
 
 interface Flop {
   cardOne: Card;
@@ -30,7 +32,7 @@ export default class Deck {
 
   cards: Card[];
 
-  constructor(autoShuffle?: boolean) {
+  constructor(autoShuffle: boolean = false) {
     
     // Construct new deck, and shuffle if shuffle flag is set true
     if (autoShuffle === true) {
@@ -84,18 +86,12 @@ export default class Deck {
 
   shuffleDeck(): void {
     // Shuffle deck using Fisher-Yates
-    for (let i = this.cards.length; i > 0; i--) {
+    for (let i = this.cards.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
     }
     return;
   }
-
-  /**
-    dealCards(tableState: TableState, playerArray: Players[]): void {
-  
-    }
-  */
 
   dealHand(): Hand {
     if (this.cards.length < 5) {
@@ -103,5 +99,11 @@ export default class Deck {
     }
     const handCards = this.cards.splice(0, 5);
     return new Hand(handCards);
+  }
+
+  draw(): Card {
+    if (this.cards.length < 1)
+      throw new Error('Not enough cards to draw.');
+    else return this.cards.pop()!;
   }
 }

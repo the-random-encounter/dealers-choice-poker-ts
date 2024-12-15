@@ -1,6 +1,7 @@
 import Card from './Card';
-import { Hand as HandType } from '../utils/types';
+import { HandType } from '../utils/types';
 //import { generateRandomHand } from '../utils/cardFunctions';
+import * as CONSTS from '../utils/constants';
 
 export default class Hand {
   cards: HandType;
@@ -10,6 +11,24 @@ export default class Hand {
       throw new Error('A hand must contain exactly 5 cards.');
     }
     this.cards = cards;
+  }
+
+  valueOf() {
+    return this.cards;
+  }
+
+  toString() {
+    return this.cards.toString();
+  }
+
+  [Symbol.toPrimitive](hint: string) {
+    if (hint === 'number') {
+      return this.cards.length;
+    }
+    if (hint === 'string') {
+      return this.toString();
+    }
+    return this.valueOf();
   }
 
   sortDescending(): void {
