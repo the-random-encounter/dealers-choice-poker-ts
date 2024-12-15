@@ -46,19 +46,19 @@ export default class Deck {
 
   // Implement iterator for deck, so that it can be looped through easily
   [Symbol.iterator]() {
-        let index = 0;
-        const cards = this.cards;
+    let index = 0;
+    const cards = this.cards;
 
-        return {
-            next(): IteratorResult<Card> {
-                if (index < cards.length) {
-                    return { value: cards[index++], done: false };
-                } else {
-                    return { value: undefined, done: true };
-                }
-            }
-        };
-    }
+    return {
+      next(): IteratorResult<Card> {
+        if (index < cards.length) {
+          return { value: cards[index++], done: false };
+        } else {
+          return { value: undefined, done: true };
+        }
+      }
+    };
+  }
 
 
   private generateDeck(): Card[] {
@@ -106,4 +106,4 @@ export default class Deck {
       throw new Error('Not enough cards to draw.');
     else return this.cards.pop()!;
   }
-}
+}console.log();console.log();

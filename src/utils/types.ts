@@ -22,3 +22,7 @@ export interface Board {
   rivers: Array<Card>;
 }
 
+export interface HandEvaluation {
+  string: string;
+  value: number;
+}

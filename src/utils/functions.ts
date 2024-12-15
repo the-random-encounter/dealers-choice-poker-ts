@@ -1,4 +1,4 @@
-import { Suit, Rank, RankCapitalized, CardName, RankValue, HandType, Board } from './types';
+import { Suit, Rank, RankCapitalized, CardName, RankValue, HandType, Board, HandEvaluation } from './types';
 import * as CONSTS from './constants';
 import Card from '../classes/Card';
 import Hand from '../classes/Hand';
@@ -90,7 +90,7 @@ export function valueToRank(value: RankValue, capitalize = false): Rank | RankCa
     }
   }
 
-export function evaluateHand(hand: Hand): string {
+export function evaluateHand(hand: Hand): HandEvaluation {
   
   const handCards = hand.cards;
   // Histogram
@@ -100,7 +100,7 @@ export function evaluateHand(hand: Hand): string {
   const histogram: {[key in RankValue]?: number} = {};
 
   // Iterate over cards in hand array and increment counter for each RankValue present
-  handCards.reduce((histogram, card) => {
+  handCards.reduce((histogram: {[key in RankValue]?: number}, card: Card) => {
     histogram[card.value as RankValue] = (histogram[card.value as RankValue] || 0) + 1;
     return histogram;
   }, histogram);
@@ -120,7 +120,7 @@ export function evaluateHand(hand: Hand): string {
   // Suits
   // [ suit: count ]
 
-  const suits = handCards.reduce((suits, card) => {
+  const suits = handCards.reduce((suits: number[], card: Card) => {
     suits[card.suitValue()]++;
     return suits;
   }, [0,0,0,0]);
@@ -146,21 +146,28 @@ export function evaluateHand(hand: Hand): string {
   // Starting with Royal Flush and working downwards
   // Using ternary operators to chain evaluations together
 
-  const bestHand = 
-    (isStraight && isFlush && rankedHand[4] === 14 && !isWheel)   ? `Royal Flush`
-  : (isStraight && isFlush)                                       ? `Straight Flush${isWheel ? ` (Wheel, ${capitalize(handCards[0].suit)})` 
-  :                                                                  `(${rankedHand[0]} - ${rankedHand[4], capitalize(handCards[0].suit)})`}`
-  : (scoredHistogram[0][1] === 4)                                 ? `Four of a Kind`
-  : (scoredHistogram[0][1] === 3 && scoredHistogram[1][1] === 2)  ? `Full House`    
-  : (isFlush)                                                     ? `Flush (${capitalize(handCards[0].suit)})`
-  : (isStraight)                                                  ? `Straight${isWheel ? ` (Wheel)` : ` (${rankedHand[0]} - ${rankedHand[4]})`}`
-  : (scoredHistogram[0][1] === 3 && scoredHistogram[1][1] === 1)  ? `Three of a Kind (${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))}'s)`
-  : (scoredHistogram[0][1] === 2 && scoredHistogram[1][1] === 2)  ? `Two Pair (${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))}'s and ` 
-  +                                                                 `${capitalize(valueToRank(scoredHistogram[1][0] as RankValue))}'s)`
-  : (scoredHistogram[0][1] === 2 && scoredHistogram[1][1] === 1)  ? `Pair of ${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))}'s`
-  :                                                                 `High Card (${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))})`;
+  let bestHandObject: HandEvaluation = {
+    string: '',
+    value: 0
+  }
 
-  return bestHand;
+
+  bestHandObject.value =
+
+    (isStraight && isFlush && rankedHand[4] === 14 && !isWheel)   ? (10)
+  : (isStraight && isFlush)                                       ? (9   + (rankedHand[0] / 100)) 
+  : (scoredHistogram[0][1] === 4)                                 ? (8   + ((scoredHistogram[0][0] ?? 0) / 100))
+  : (scoredHistogram[0][1] === 3 && scoredHistogram[1][1] === 2)  ? (7   + ((scoredHistogram[0][0] ?? 0) / 100) + ((scoredHistogram[1][0] ?? 0) / 1000))   
+  : (isFlush)                                                     ? (6   + (rankedHand[0] / 100))
+  : (isStraight)                                                  ? (5   + (rankedHand[0] / 100))
+  : (scoredHistogram[0][1] === 3 && scoredHistogram[1][1] === 1)  ? (4   + ((scoredHistogram[0][0] ?? 0) / 100))
+  : (scoredHistogram[0][1] === 2 && scoredHistogram[1][1] === 2)  ? (3   + ((scoredHistogram[0][0] ?? 0) / 100) + ((scoredHistogram[1][0] ?? 0)/ 1000))
+  : (scoredHistogram[0][1] === 2 && scoredHistogram[1][1] === 1)  ? (2   + ((scoredHistogram[0][0] ?? 0) / 100))
+  :                                                                 (1   + ((scoredHistogram[0][0] ?? 0) / 100));
+
+
+  bestHandObject.string = bestHandValueToString(bestHandObject.value, scoredHistogram as Array<Array<RankValue | number>>, rankedHand, handCards, isWheel, isStraight, isFlush);
+  return bestHandObject;
 }
 
 // Capitalize first letter of the provided string, intended for single word strings
@@ -169,7 +176,21 @@ function capitalize(str: string): string {
 }
 
 export function* iterateBoard(board: Board): IterableIterator<Card[]> {
-  yield* board.flops;
-  yield board.turns;
-  yield board.rivers;
+  yield*  board.flops;
+  yield   board.turns;
+  yield   board.rivers;
+}
+
+function bestHandValueToString(value: number, scoredHistogram: Array<Array<RankValue | number>>, rankedHand: RankValue[], handCards: Array<Card>, isWheel: boolean, isStraight: boolean, isFlush: boolean): string {
+  if      (value >= 10) return `Royal Flush`;
+  else if (value >= 9)  return `Straight Flush${isWheel ? ` (Wheel, ${capitalize(handCards[0].suit)})` : ` (${rankedHand[0]} - ${rankedHand[4]}, ${capitalize(handCards[0].suit)})`}`
+  else if (value >= 8)  return `Four of a Kind (${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))}'s)`;
+  else if (value >= 7)  return `Full House (${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))}'s over ${capitalize(valueToRank(scoredHistogram[1][0] as RankValue))}'s)`;
+  else if (value >= 6)  return `Flush (${capitalize(handCards[0].suit)})`;
+  else if (value >= 5)  return `Straight${isWheel ? ` (Wheel)` : ` (${rankedHand[0]} - ${rankedHand[4]})`}`;
+  else if (value >= 4)  return `Three of a Kind (${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))}'s)`;
+  else if (value >= 3)  return `Two Pair (${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))}'s and ${capitalize(valueToRank(scoredHistogram[1][0] as RankValue))}'s)`;
+  else if (value >= 2)  return `Pair of ${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))}'s`;
+  else                  return `High Card (${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))})`;
+  
 }

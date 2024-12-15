@@ -2,7 +2,6 @@ import { BlindType, HandType } from '../utils/types';
 import Hand from './Hand';
 import Top from './Top';
 import Table from './Table';
-
 export default class Player extends Top {
 
   userID: integer;
