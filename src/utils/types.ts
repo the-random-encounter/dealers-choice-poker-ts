@@ -26,3 +26,50 @@ export interface HandEvaluation {
   string: string;
   value: number;
 }
+
+export type GameVariant = 'TexasHoldEm' | 'Omaha' ;
+
+export interface GameConfig {
+  variant: GameVariant;
+  cardsPerPlayer: number;
+  numberOfFlops: number;
+  numberOfTurns: number;
+  numberOfRivers: number;
+}
+
+export interface CardPosition {
+  x: number;
+  y: number;
+}
+
+export interface BoardSlots {
+  flop: CardPosition[];
+  turn: CardPosition;
+  river: CardPosition;
+}
+
+export interface GameVariantSlots {
+  TexasHoldEm: CardPosition[];
+  Omaha: CardPosition[];
+  OmahaHiLo?: CardPosition[];
+}
+
+export interface PlayerSlots {
+  p1: GameVariantSlots;
+  p2: GameVariantSlots;
+  p3: GameVariantSlots;
+  p4: GameVariantSlots;
+  p5: GameVariantSlots;
+  p6: GameVariantSlots;
+}
+
+export interface GameBoardSlots {
+  TexasHoldEm: BoardSlots;
+  Omaha: BoardSlots;
+  OmahaHiLo?: BoardSlots;
+}
+
+export interface CardSlots {
+  players: PlayerSlots;
+  boards: GameBoardSlots;
+}

@@ -1,3 +1,5 @@
+import { CardSlots } from '../utils/types';
+
 // Individual string chars for Ranks and Suits, as used in card filenames
 export const RANK_CHARS = [ 'A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K' ];
 export const SUIT_CHARS = [ 'H', 'D', 'C', 'S' ];
@@ -107,88 +109,105 @@ export const COMMUNITY_CARDS_DISPLAY = {
 };
 
 // Card locations for various players and boards, dpeending on game type
-export const CARD_SLOTS = {
+export const CARD_SLOTS: CardSlots = {
         players: {
           p1: {
-            texasHoldEm: {
-              cardOne: { x: 475, y: 750 },
-              cardTwo: { x: 550, y: 750 },
-            },
-            omaha: {
-              cardOne: { x: 0, y: 0 },
-              cardTwo: { x: 0, y: 0 },
-              cardThree: { x: 0, y: 0 },
-              cardFour: { x: 0, y: 0 },
-            },
+            TexasHoldEm: [
+              { x: (GAME_X_MID - 100), y: (GAME_HEIGHT - 100)},
+              { x: (GAME_X_MID + 100), y: (GAME_HEIGHT - 100)}
+            ],
+            Omaha: [
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+            ],
           },
           p2: {
-            texasHoldEm: {
-              cardOne: { x: 0, y: 0 },
-              cardTwo: { x: 0, y: 0 },
-            },
-            omaha: {
-              cardOne: { x: 0, y: 0 },
-              cardTwo: { x: 0, y: 0 },
-              cardThree: { x: 0, y: 0 },
-              cardFour: { x: 0, y: 0 },
-            },
+            TexasHoldEm: [
+              { x: 200, y: (GAME_Y_MID)},
+              { x: 300, y: (GAME_Y_MID)}
+            ],
+            Omaha: [
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+            ],
           },
           p3: {
-            texasHoldEm: {
-              cardOne: { x: 0, y: 0 },
-              cardTwo: { x: 0, y: 0 },
-            },
-            omaha: {
-              cardOne: { x: 0, y: 0 },
-              cardTwo: { x: 0, y: 0 },
-              cardThree: { x: 0, y: 0 },
-              cardFour: { x: 0, y: 0 },
-            },
+            TexasHoldEm: [
+              { x: (GAME_X_MID - 300), y: (GAME_Y_MID)},
+              { x: (GAME_X_MID - 200), y: (GAME_Y_MID)}
+            ],
+            Omaha: [
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+            ],
           },
           p4: {
-            texasHoldEm: {
-              cardOne: { x: 0, y: 0 },
-              cardTwo: { x: 0, y: 0 },
-            },
-            omaha: {
-              cardOne: { x: 0, y: 0 },
-              cardTwo: { x: 0, y: 0 },
-              cardThree: { x: 0, y: 0 },
-              cardFour: { x: 0, y: 0 },
-            },
+            TexasHoldEm: [
+              { x: (GAME_X_MID - 300), y: (GAME_Y_MID)},
+              { x: (GAME_X_MID - 200), y: (GAME_Y_MID)}
+            ],
+            Omaha: [
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+            ],
           },
           p5: {
-            texasHoldEm: {
-              cardOne: { x: 0, y: 0 },
-              cardTwo: { x: 0, y: 0 },
-            },
-            omaha: {
-              cardOne: { x: 0, y: 0 },
-              cardTwo: { x: 0, y: 0 },
-              cardThree: { x: 0, y: 0 },
-              cardFour: { x: 0, y: 0 },
-            },
+            TexasHoldEm: [
+              { x: (GAME_X_MID - 300), y: (GAME_Y_MID)},
+              { x: (GAME_X_MID - 200), y: (GAME_Y_MID)}
+            ],
+            Omaha: [
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+            ],
           },
           p6: {
-            texasHoldEm: {
-              cardOne: { x: 0, y: 0 },
-              cardTwo: { x: 0, y: 0 },
-            },
-            omaha: {
-              cardOne: { x: 0, y: 0 },
-              cardTwo: { x: 0, y: 0 },
-              cardThree: { x: 0, y: 0 },
-              cardFour: { x: 0, y: 0 },
-            },
+            TexasHoldEm: [
+              { x: (GAME_X_MID - 300), y: (GAME_Y_MID)},
+              { x: (GAME_X_MID - 200), y: (GAME_Y_MID)}
+            ],
+            Omaha: [
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+              { x: 0, y: 0 },
+            ],
           },
         },
         boards: {
-          stdSingleCommunity: {
-            flopOne: { x: 425, y: 475 },
-            flopTwo: { x: 465, y: 475 },
-            flopThree: { x: 505, y: 475 },
-            turn: { x: 595, y: 475 },
-            river: { x: 685, y: 475 },
-          }
-        }
-      }
+          TexasHoldEm: {
+            flop: [ 
+              { x: GAME_X_MID - 300, y: GAME_Y_MID },
+              { x: GAME_X_MID - 200, y: GAME_Y_MID },
+              { x: GAME_X_MID - 100, y: GAME_Y_MID }],
+            turn:   { x: GAME_X_MID + 150, y: GAME_Y_MID },
+            river:  { x: GAME_X_MID + 300, y: GAME_Y_MID },
+          },
+          Omaha: {
+            flop: [ 
+              { x: GAME_X_MID - 300, y: GAME_Y_MID },
+              { x: GAME_X_MID - 200, y: GAME_Y_MID },
+              { x: GAME_X_MID - 100, y: GAME_Y_MID }],
+            turn:   { x: GAME_X_MID + 200, y: GAME_Y_MID },
+            river:  { x: GAME_X_MID + 350, y: GAME_Y_MID },
+          },
+          OmahaHiLo: {
+            flop: [ 
+              { x: GAME_X_MID - 300, y: GAME_Y_MID },
+              { x: GAME_X_MID - 200, y: GAME_Y_MID },
+              { x: GAME_X_MID - 100, y: GAME_Y_MID }],
+            turn:   { x: GAME_X_MID + 200, y: GAME_Y_MID },
+            river:  { x: GAME_X_MID + 350, y: GAME_Y_MID },}
+        },
+        
+      };
