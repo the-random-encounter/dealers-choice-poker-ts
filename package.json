@@ -44,10 +44,11 @@
     "webpack-merge": "^5.10.0"
   },
   "dependencies": {
+    "colyseus": "^0.15.57",
     "phaser": "^3.87.0"
   },
   "transform": {
-      "\\.js$": "<rootDir>/node_modules/babel-jest"
-    },
+    "\\.js$": "<rootDir>/node_modules/babel-jest"
+  },
   "description": "This is a Phaser 3 project to create an online poker game that supports dealer's choice: players will be able to author and deal their own poker gametypes, either beforehand or during live play."
 }
