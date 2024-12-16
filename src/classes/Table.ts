@@ -2,14 +2,19 @@ import Player from "./Player";
 import Deck from './Deck';
 import Card from "./Card";
 import Hand from './Hand';
-import Phaser from 'phaser';
+import Phaser, { Scene } from 'phaser';
 import * as funcs from '../utils/functions';
+import * as CONSTS from '../utils/constants';
 import { GameConfig, Board } from '../utils/types';
+import { Game } from '../scenes/Game';
+
+const c = CONSTS;
 
 export default class Table {
 
   tableID: number;
   tableName: string;
+  gameScene: Scene;
   players: Player[] = [];
   dealer: Player;
   smallBlind: Player;
@@ -22,10 +27,15 @@ export default class Table {
   burnPile: Card[] = [];
   dealOrder: Array<Array<Player | string>>;
 
-  constructor(tableName: string, config: GameConfig) {
+  private dealerToken: number = 0;
+  private smallBlindToken: number = 0;
+  private bigBlindToken: number = this.smallBlindToken + 1;
+
+  constructor(tableName: string, config: GameConfig, gameScene: Scene) {
     this.tableName = tableName;
     this.tableID = this.generateTableID();
     this.gameConfig = config;
+    this.gameScene = gameScene;
     this.deck = new Deck(true);
 
 
@@ -59,13 +69,36 @@ export default class Table {
 
   }
 
+  advanceRound(): void {
+    if (this.players.length === 2) {
+      this.dealerToken++;
+      this.bigBlindToken = this.dealerToken;
+      this.smallBlindToken = this.dealerToken + 1;
+    } else if (this.players.length > 2) {
+      this.dealerToken++;
+      this.smallBlindToken = this.dealerToken + 1;
+      this.bigBlindToken = this.dealerToken + 2;
+    }
+
+    if (this.dealerToken === this.players.length)
+      this.dealerToken = 0;
+    if (this.smallBlindToken === this.players.length)
+      this.smallBlindToken = 0;
+    if (this.bigBlindToken === this.players.length)
+      this.bigBlindToken = 0;
+  }
+
   prepareToDeal(): void {
     let dealOrder: Array<Array<Player | string>> = [];
     
     let playerCards: Player[] = [];
     for (let i = 0; i < this.gameConfig.cardsPerPlayer; i++) {
-      for (const player of this.players)
-        playerCards.push(player);
+      for (let i = this.dealerToken; playerCards.length <= this.players.length; i++) {
+        if (i === this.players.length)
+          i = 0;
+
+        playerCards.push(this.players[i]);
+      }
     }
 
     dealOrder.push(playerCards);
@@ -90,8 +123,12 @@ export default class Table {
   dealNext(): void {
     let nextDeal = this.dealOrder.shift();
     if (nextDeal) {
-      if (nextDeal[0] === 'burn')
+      if (nextDeal[0] === 'burn') {
         this.burnPile.push(this.deck.draw());
+
+        const burnImg = this.gameScene.add.image(c.GAME_WIDTH - 200 + (Math.random() * 100), c.GAME_HEIGHT - 100 + (Math.random() * 100), 'cardback').setOrigin(0.5);
+
+      }
       else if (nextDeal[0] === 'flop') {
         let flop: Card[] = [];
         for (let i = 0; i < 3; i++)

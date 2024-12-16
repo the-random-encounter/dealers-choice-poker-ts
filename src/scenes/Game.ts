@@ -67,7 +67,7 @@ export class Game extends Scene
 
         this.gameConfig = gameConfig;
         
-        this.table = new Table('Main Table', gameConfig);
+        this.table = new Table('Main Table', gameConfig, this);
         this.table.addPlayer(player1);
         this.table.addPlayer(player2);
 
@@ -132,6 +132,7 @@ export class Game extends Scene
         const flop3 = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].flop[2].x,  c.CARD_SLOTS.boards[this.gameConfig.variant].flop[2].y, 'cardback').setOrigin(0.5);
         const turn  = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].turn.x,     c.CARD_SLOTS.boards[this.gameConfig.variant].turn.y,    'cardback').setOrigin(0.5);
         const river = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].river.x,    c.CARD_SLOTS.boards[this.gameConfig.variant].river.y,   'cardback').setOrigin(0.5);
+        const burners = this.add.image(c.GAME_WIDTH - 200, c.GAME_HEIGHT - 100, 'cardback').setOrigin(0.5);
 
         this.cards = [p1c1, p1c2, p2c1, p2c2, flop1, flop2, flop3, turn, river];
         
