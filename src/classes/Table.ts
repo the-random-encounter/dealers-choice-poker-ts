@@ -5,7 +5,7 @@ import Hand from './Hand';
 import Phaser, { Scene } from 'phaser';
 import * as funcs from '../utils/functions';
 import * as CONSTS from '../utils/constants';
-import { GameConfig, Board } from '../utils/types';
+import { GameConfig, Board, GameState } from '../utils/types';
 import { Game } from '../scenes/Game';
 
 const c = CONSTS;
@@ -26,10 +26,16 @@ export default class Table {
   gameConfig: GameConfig;
   burnPile: Card[] = [];
   dealOrder: Array<Array<Player | string>>;
-
-  private dealerToken: number = 0;
-  private smallBlindToken: number = 0;
-  private bigBlindToken: number = this.smallBlindToken + 1;
+  currentState: GameState = GameState.IDLE;
+  currentBet: number = 0;
+  activePlayerIndex: number = 0;
+  
+  smallBlindAmount: number = 10;
+  bigBlindAmount: number = 20;
+  
+  dealerToken: number = 0;
+  smallBlindToken: number = 0;
+  bigBlindToken: number = this.smallBlindToken + 1;
 
   constructor(tableName: string, config: GameConfig, gameScene: Scene) {
     this.tableName = tableName;
@@ -188,6 +194,18 @@ export default class Table {
     }
   }
 
+  dealFlop(): void {
+
+  }
+
+  dealTurn(): void {
+
+  }
+
+  dealRiver(): void {
+
+  }
+
   clearTable(): void {
     // Clear all hands
     for (const player of this.players) {
@@ -201,5 +219,103 @@ export default class Table {
   addPlayer(player: Player): void {
     this.players.push(player);
     player.currentTableID = this.tableID;
+  }
+
+  processBettingRound(): void {
+    const currentPlayer = this.players[this.activePlayerIndex];
+    
+    // Check if round is complete (all players have equal bets or folded)
+    if (this.isBettingComplete()) {
+      this.moveToNextPhase();
+      return;
+    }
+
+    // Move to next active player
+    this.activePlayerIndex = this.getNextActivePlayer();
+  }
+
+  isBettingComplete(): boolean {
+    const activePlayers = this.players.filter(p => !p.isFolded);
+    const bets = new Set(activePlayers.map(p => p.currentBet));
+    return bets.size === 1;
+  }
+
+  moveToNextPhase(): void {
+    switch (this.currentState) {
+      case GameState.PREFLOP:
+        this.currentState = GameState.FLOP;
+        this.dealFlop();
+        break;
+      case GameState.FLOP:
+        this.currentState = GameState.TURN;
+        this.dealTurn();
+        break;
+      case GameState.TURN:
+        this.currentState = GameState.RIVER;
+        this.dealRiver();
+        break;
+      case GameState.RIVER:
+        this.currentState = GameState.SHOWDOWN;
+        this.determineWinner();
+        break;
+    }
+    this.resetBets();
+  }
+
+  private resetBets(): void {
+    this.currentBet = 0;
+    this.players.forEach(p => p.resetBets());
+  }
+
+  collectBets(): void {
+    this.pot += this.players.reduce((sum, p) => sum + p.currentBet, 0);
+    this.resetBets();
+  }
+
+  private getNextActivePlayer(): number {
+    let next = (this.activePlayerIndex + 1) % this.players.length;
+    while (this.players[next].isFolded) {
+      next = (next + 1) % this.players.length;
+    }
+    return next;
+  }
+
+  determineWinner(): void {
+    const activePlayers = this.players.filter(p => !p.isFolded);
+    if (activePlayers.length === 1) {
+      this.awardPot(activePlayers[0]);
+      return;
+    }
+
+    let bestHand = 0;
+    let winners: Player[] = [];
+
+    for (const player of activePlayers) {
+      const evaluation = funcs.evaluateHand(new Hand([
+        ...player.currentHand?.cards || [],
+        ...this.board.flops[0],
+        ...this.board.turns,
+        ...this.board.rivers
+      ]));
+
+      if (evaluation.value > bestHand) {
+        bestHand = evaluation.value;
+        winners = [player];
+      } else if (evaluation.value === bestHand) {
+        winners.push(player);
+      }
+    }
+
+    this.awardPot(winners);
+  }
+
+  private awardPot(winners: Player | Player[]): void {
+    if (Array.isArray(winners)) {
+      const share = Math.floor(this.pot / winners.length);
+      winners.forEach(w => w.currentChips += share);
+    } else {
+      winners.currentChips += this.pot;
+    }
+    this.pot = 0;
   }
 }

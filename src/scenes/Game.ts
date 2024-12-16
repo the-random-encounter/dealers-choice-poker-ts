@@ -5,7 +5,7 @@ import Hand from '../classes/Hand';
 import Table from '../classes/Table';
 import Player from '../classes/Player';
 
-import { GameVariant, GameConfig } from '../utils/types';
+import { GameVariant, GameConfig, GameState, PlayerAction, } from '../utils/types';
 import * as funcs from '../utils/functions';
 import * as CONSTS from '../utils/constants';
 
@@ -19,6 +19,8 @@ export class Game extends Scene
     gameConfig: GameConfig;
     private table: Table;
     cards: Phaser.GameObjects.Image[] = [];
+    chipsDisplay: Phaser.GameObjects.Text;
+    private actionButtons: Phaser.GameObjects.Text[] = [];
 
     constructor ()
     {
@@ -38,6 +40,18 @@ export class Game extends Scene
         const player1 = new Player('p1', 'Player 1');
         const player2 = new Player('p2', 'Player 2');
         
+        const chipsLabel = this.add.text(100, 50, 'Chips: ', {
+            fontFamily: 'Arial Black', fontSize: 36, color: '#ffffff',
+            stroke: '#00ffff', strokeThickness: 3,
+            align: 'center'
+        }).setOrigin(0.5);
+
+        this.chipsDisplay = this.add.text(150, 50, `${this.table.players[0].currentChips.toString()}`, {
+            fontFamily: 'Arial Black', fontSize: 36, color: '#ffffff',
+            stroke: '#0000ff', strokeThickness: 3,
+            align: 'center'
+        }).setOrigin(0.5);
+        
         const dealButton = this.add.text(c.GAME_WIDTH-100,50, 'DEAL', {
             fontFamily: 'Arial Black', fontSize: 72, color: '#ffffff',
             stroke: '#FF0000', strokeThickness: 6,
@@ -56,6 +70,12 @@ export class Game extends Scene
             align: 'center'
         }).setOrigin(0.5).setInteractive();
 
+        const chipsDebugBtn = this.add.text(150, c.GAME_HEIGHT-100, "Add Chips", {
+            fontFamily: 'Arial Black', fontSize: 36, color: '#ffffff',
+            stroke: '#00ffff', strokeThickness: 6,
+            align: 'center'
+        }).setOrigin(0.5).setInteractive();
+
         // Initialize table with Texas Hold'em configuration
         const gameConfig: GameConfig = {
             variant: 'TexasHoldEm',
@@ -71,16 +91,18 @@ export class Game extends Scene
         this.table.addPlayer(player1);
         this.table.addPlayer(player2);
 
-        dealButton.on('pointerdown', () => {
-            
-            for (let i = 0; i < this.cards.length; i++) {
-              this.cards[i].setVisible(false);
+        this.createActionButtons();
+
+        chipsDebugBtn.on('pointerdown', () => {
+            if (this.table.players[0]) {
+                this.table.players[0].currentChips += 1000;
             }
-          
-            this.table.clearTable();
-            this.table.dealCards();
-            this.renderCards();
-            cardsDealt = true;
+        });
+
+        dealButton.on('pointerdown', () => {
+            if (this.table.currentState === GameState.IDLE) {
+                this.startNewHand();
+            }
         });
 
         evalButton.on('pointerdown', () => {
@@ -121,17 +143,21 @@ export class Game extends Scene
         });
     }
 
+    update() {
+
+      this.chipsDisplay.text = this.table.players[0].currentChips.toString();
+    }
     private renderCards(): void {
         
-        const p1c1  = this.add.image(c.CARD_SLOTS.players.p1[this.gameConfig.variant][0].x,   c.CARD_SLOTS.players.p1[this.gameConfig.variant][0].y,  'cardback').setOrigin(0.5);
-        const p1c2  = this.add.image(c.CARD_SLOTS.players.p1[this.gameConfig.variant][1].x,   c.CARD_SLOTS.players.p1[this.gameConfig.variant][1].y,  'cardback').setOrigin(0.5);
-        const p2c1  = this.add.image(c.CARD_SLOTS.players.p2[this.gameConfig.variant][0].x,   c.CARD_SLOTS.players.p2[this.gameConfig.variant][0].y,  'cardback').setOrigin(0.5);
-        const p2c2  = this.add.image(c.CARD_SLOTS.players.p2[this.gameConfig.variant][1].x,   c.CARD_SLOTS.players.p2[this.gameConfig.variant][1].y,  'cardback').setOrigin(0.5);
-        const flop1 = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].flop[0].x,  c.CARD_SLOTS.boards[this.gameConfig.variant].flop[0].y, 'cardback').setOrigin(0.5);
-        const flop2 = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].flop[1].x,  c.CARD_SLOTS.boards[this.gameConfig.variant].flop[1].y, 'cardback').setOrigin(0.5);
-        const flop3 = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].flop[2].x,  c.CARD_SLOTS.boards[this.gameConfig.variant].flop[2].y, 'cardback').setOrigin(0.5);
-        const turn  = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].turn.x,     c.CARD_SLOTS.boards[this.gameConfig.variant].turn.y,    'cardback').setOrigin(0.5);
-        const river = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].river.x,    c.CARD_SLOTS.boards[this.gameConfig.variant].river.y,   'cardback').setOrigin(0.5);
+        const p1c1    = this.add.image(c.CARD_SLOTS.players.p1[this.gameConfig.variant][0].x,  c.CARD_SLOTS.players.p1[this.gameConfig.variant][0].y,  'cardback').setOrigin(0.5);
+        const p1c2    = this.add.image(c.CARD_SLOTS.players.p1[this.gameConfig.variant][1].x,  c.CARD_SLOTS.players.p1[this.gameConfig.variant][1].y,  'cardback').setOrigin(0.5);
+        const p2c1    = this.add.image(c.CARD_SLOTS.players.p2[this.gameConfig.variant][0].x,  c.CARD_SLOTS.players.p2[this.gameConfig.variant][0].y,  'cardback').setOrigin(0.5);
+        const p2c2    = this.add.image(c.CARD_SLOTS.players.p2[this.gameConfig.variant][1].x,  c.CARD_SLOTS.players.p2[this.gameConfig.variant][1].y,  'cardback').setOrigin(0.5);
+        const flop1   = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].flop[0].x, c.CARD_SLOTS.boards[this.gameConfig.variant].flop[0].y, 'cardback').setOrigin(0.5);
+        const flop2   = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].flop[1].x, c.CARD_SLOTS.boards[this.gameConfig.variant].flop[1].y, 'cardback').setOrigin(0.5);
+        const flop3   = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].flop[2].x, c.CARD_SLOTS.boards[this.gameConfig.variant].flop[2].y, 'cardback').setOrigin(0.5);
+        const turn    = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].turn.x,    c.CARD_SLOTS.boards[this.gameConfig.variant].turn.y,    'cardback').setOrigin(0.5);
+        const river   = this.add.image(c.CARD_SLOTS.boards[this.gameConfig.variant].river.x,   c.CARD_SLOTS.boards[this.gameConfig.variant].river.y,   'cardback').setOrigin(0.5);
         const burners = this.add.image(c.GAME_WIDTH - 200, c.GAME_HEIGHT - 100, 'cardback').setOrigin(0.5);
 
         this.cards = [p1c1, p1c2, p2c1, p2c2, flop1, flop2, flop3, turn, river];
@@ -155,6 +181,7 @@ export class Game extends Scene
         flop3 .data.set('card', this.table.board.flops[0][2].name);
         turn  .data.set('card', this.table.board.turns[0]   .name);
         river .data.set('card', this.table.board.rivers[0]  .name);
+        
         this.tweens.add({
             targets: p1c1,
             props: {
@@ -163,7 +190,6 @@ export class Game extends Scene
             },
             ease: 'Linear'
         });
-
         this.tweens.add({
             targets: p1c2,
             props: {
@@ -172,7 +198,6 @@ export class Game extends Scene
             },
             ease: 'Linear'
         });
-
         this.tweens.add({
             targets: p2c1,
             props: {
@@ -181,7 +206,6 @@ export class Game extends Scene
             },
             ease: 'Linear'
         });
-
         this.tweens.add({
             targets: p2c2,
             props: {
@@ -190,7 +214,6 @@ export class Game extends Scene
             },
             ease: 'Linear'
         });
-
         this.tweens.add({
             targets: flop1,
             props: {
@@ -199,7 +222,6 @@ export class Game extends Scene
             },
             ease: 'Linear'
         });
-
         this.tweens.add({
             targets: flop2,
             props: {
@@ -208,7 +230,6 @@ export class Game extends Scene
             },
             ease: 'Linear'
         });
-
         this.tweens.add({
             targets: flop3,
             props: {
@@ -217,7 +238,6 @@ export class Game extends Scene
             },
             ease: 'Linear'
         });
-
         this.tweens.add({
             targets: turn,
             props: {
@@ -226,7 +246,6 @@ export class Game extends Scene
             },
             ease: 'Linear'
         });
-
         this.tweens.add({
             targets: river,
             props: {
@@ -235,5 +254,79 @@ export class Game extends Scene
             },
             ease: 'Linear'
         });
+    }
+
+    private createActionButtons(): void {
+        const actions = ['Check', 'Call', 'Bet', 'Raise', 'Fold'];
+        const startX = 400;
+        
+        this.actionButtons = actions.map((action, i) => {
+            const button = this.add.text(startX + (i * 150), c.GAME_HEIGHT - 50, action, {
+                fontSize: '24px',
+                backgroundColor: '#444'
+            })
+            .setInteractive()
+            .setVisible(false);
+
+            button.on('pointerdown', () => this.handlePlayerAction(action.toLowerCase() as PlayerAction));
+            
+            return button;
+        });
+    }
+
+    private startNewHand(): void {
+        this.table.currentState = GameState.DEALING;
+        this.table.clearTable();
+        this.table.dealCards();
+        this.renderCards();
+        
+        // Post blinds
+        this.table.players[this.table.smallBlindToken].placeBet(this.table.smallBlindAmount);
+        this.table.players[this.table.bigBlindToken].placeBet(this.table.bigBlindAmount);
+        
+        this.table.currentState = GameState.PREFLOP;
+        this.showActionButtons();
+    }
+
+    private handlePlayerAction(action: PlayerAction): void {
+        const player = this.table.players[this.table.activePlayerIndex];
+        
+        switch (action) {
+            case 'check':
+                if (player.currentBet === this.table.currentBet) {
+                    this.table.processBettingRound();
+                }
+                break;
+            case 'call':
+                const callAmount = this.table.currentBet - player.currentBet;
+                if (player.placeBet(callAmount)) {
+                    this.table.processBettingRound();
+                }
+                break;
+            case 'bet':
+                // Add bet amount input logic here
+                const betAmount = 20; // Example amount
+                if (player.placeBet(betAmount)) {
+                    this.table.currentBet = betAmount;
+                    this.table.processBettingRound();
+                }
+                break;
+            case 'fold':
+                player.fold();
+                this.table.processBettingRound();
+                break;
+        }
+        
+        this.updateUI();
+    }
+
+    private updateUI(): void {
+        // Update chip counts, pot size, current bet, etc.
+        this.chipsDisplay.text = `${this.table.players[0].currentChips}`;
+        // Add more UI updates as needed
+    }
+
+    private showActionButtons(): void {
+        this.actionButtons.forEach(button => button.setVisible(true));
     }
 }

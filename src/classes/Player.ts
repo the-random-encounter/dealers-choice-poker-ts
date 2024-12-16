@@ -10,10 +10,12 @@ export default class Player extends Top {
   wallet: number;
   currentTableID?: number;
   table?: Table;
-  currentChips?: integer;
+  currentChips: integer = 0;
   currentDealer: boolean;
   currentBlind?: BlindType;
   currentHand?: Hand;
+  isFolded: boolean = false;
+  currentBet: number = 0;
 
   constructor(username: string, displayName: string) {
     super();
@@ -21,6 +23,22 @@ export default class Player extends Top {
     this.displayName = displayName;
     this.wallet = 0;
     this.currentChips = 0;
+  }
+
+  placeBet(amount: number): boolean {
+    if (amount > this.currentChips) return false;
+    this.currentChips -= amount;
+    this.currentBet += amount;
+    return true;
+  }
+
+  fold(): void {
+    this.isFolded = true;
+  }
+
+  resetBets(): void {
+    this.currentBet = 0;
+    this.isFolded = false;
   }
 
 }

@@ -1,5 +1,6 @@
 // Global Card data types (Suits, Ranks, Ranks as Values, Card Names)
 import Card from '../classes/Card';
+import Player from '../classes/Player';
 
 export type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades';
 export type SuitCapitalized = 'Hearts' | 'Diamonds' | 'Clubs' | 'Spades';
@@ -72,4 +73,22 @@ export interface GameBoardSlots {
 export interface CardSlots {
   players: PlayerSlots;
   boards: GameBoardSlots;
+}
+
+export enum GameState {
+  IDLE = 'IDLE',
+  DEALING = 'DEALING',
+  PREFLOP = 'PREFLOP',
+  FLOP = 'FLOP',
+  TURN = 'TURN',
+  RIVER = 'RIVER',
+  SHOWDOWN = 'SHOWDOWN'
+}
+
+export type PlayerAction = 'check' | 'bet' | 'call' | 'raise' | 'fold';
+
+export interface BetInfo {
+  amount: number;
+  player: Player;
+  action: PlayerAction;
 }
