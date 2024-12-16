@@ -7,9 +7,6 @@ export default class Hand {
   cards: HandType;
 
   constructor(cards: HandType) {
-    if (cards.length !== 5) {
-      throw new Error('A hand must contain exactly 5 cards.');
-    }
     this.cards = cards;
   }
 
@@ -21,6 +18,7 @@ export default class Hand {
     return this.cards.toString();
   }
 
+  
   [Symbol.toPrimitive](hint: string) {
     if (hint === 'number') {
       return this.cards.length;
@@ -29,6 +27,21 @@ export default class Hand {
       return this.toString();
     }
     return this.valueOf();
+  }
+
+  [Symbol.iterator](): Iterator<Card> {
+    let index = 0;
+    const cards = this.cards;
+
+    return {
+      next(): IteratorResult<Card> {
+        if (index < cards.length) {
+          return { value: cards[index++], done: false };
+        } else {
+          return { value: undefined, done: true };
+        }
+      }
+    };
   }
 
   sortDescending(): void {
@@ -52,6 +65,10 @@ export default class Hand {
     return true;
   }
 
-}
+  addCard(card: Card): void {
+    this.cards.push(card);
+  }
 
+
+}
 
