@@ -1,7 +1,8 @@
-import { BlindType, HandType } from '../utils/types';
+import { BlindType, HandType, PlayerAction } from '../utils/types';
 import Hand from './Hand';
 import Top from './Top';
 import Table from './Table';
+
 export default class Player extends Top {
 
   userID: integer;
@@ -16,6 +17,10 @@ export default class Player extends Top {
   currentHand?: Hand;
   isFolded: boolean = false;
   currentBet: number = 0;
+  lastAction: PlayerAction;
+  hasPostedBlind: boolean = false;
+  hasCalledBet: boolean = false;
+  hasRaised: boolean = false;
 
   constructor(username: string, displayName: string) {
     super();
@@ -27,18 +32,45 @@ export default class Player extends Top {
 
   placeBet(amount: number): boolean {
     if (amount > this.currentChips) return false;
-    this.currentChips -= amount;
-    this.currentBet += amount;
+    else {
+      this.currentChips -= amount;
+      this.currentBet += amount;
+      this.lastAction = 'bet';
+      return true;
+    }
+  }
+
+  checkBet(): boolean {
+    this.lastAction = 'check';
     return true;
   }
 
   fold(): void {
     this.isFolded = true;
+    this.lastAction = 'fold';
   }
 
   resetBets(): void {
     this.currentBet = 0;
     this.isFolded = false;
+  }
+
+  postBlind(type: BlindType): boolean {
+    
+    if (type == 'small') {
+      if (this.currentChips < this.table!.smallBlindAmount) return false;
+        this.currentChips  -= this.table!.smallBlindAmount;
+        this.currentBet    += this.table!.smallBlindAmount;
+        this.hasPostedBlind = true;
+    } else if (type == 'big') {
+      if (this.currentChips < this.table!.bigBlindAmount) return false;
+        this.currentChips  -= this.table!.bigBlindAmount;
+        this.currentBet    += this.table!.bigBlindAmount;
+        this.hasPostedBlind = true;
+    } else if (type === 'none') {
+      this.hasPostedBlind = true;
+    }
+    return true;
   }
 
 }

@@ -17,9 +17,10 @@ export class Game extends Scene
     background: Phaser.GameObjects.Image;
     msg_text : Phaser.GameObjects.Text;
     gameConfig: GameConfig;
-    private table: Table;
+    table: Table;
     cards: Phaser.GameObjects.Image[] = [];
     chipsDisplay: Phaser.GameObjects.Text;
+    potDisplay: Phaser.GameObjects.Text;
     private actionButtons: Phaser.GameObjects.Text[] = [];
 
     constructor ()
@@ -39,42 +40,6 @@ export class Game extends Scene
         
         const player1 = new Player('p1', 'Player 1');
         const player2 = new Player('p2', 'Player 2');
-        
-        const chipsLabel = this.add.text(100, 50, 'Chips: ', {
-            fontFamily: 'Arial Black', fontSize: 36, color: '#ffffff',
-            stroke: '#00ffff', strokeThickness: 3,
-            align: 'center'
-        }).setOrigin(0.5);
-
-        this.chipsDisplay = this.add.text(150, 50, `${this.table.players[0].currentChips.toString()}`, {
-            fontFamily: 'Arial Black', fontSize: 36, color: '#ffffff',
-            stroke: '#0000ff', strokeThickness: 3,
-            align: 'center'
-        }).setOrigin(0.5);
-        
-        const dealButton = this.add.text(c.GAME_WIDTH-100,50, 'DEAL', {
-            fontFamily: 'Arial Black', fontSize: 72, color: '#ffffff',
-            stroke: '#FF0000', strokeThickness: 6,
-            align: 'center'
-        }).setOrigin(0.5).setInteractive();
-
-        const mainMenuButton = this.add.text(150, 100, "Menu", {
-            fontFamily: 'Arial Black', fontSize: 72, color: '#ffffff',
-            stroke: '#00ffff', strokeThickness: 6,
-            align: 'center'
-        }).setOrigin(0.5).setInteractive();
-
-        const evalButton = this.add.text(c.GAME_WIDTH-100, 200, 'EVAL', {
-            fontFamily: 'Arial Black', fontSize: 72, color: '#ffffff',
-            stroke: '#FF0000', strokeThickness: 6,
-            align: 'center'
-        }).setOrigin(0.5).setInteractive();
-
-        const chipsDebugBtn = this.add.text(150, c.GAME_HEIGHT-100, "Add Chips", {
-            fontFamily: 'Arial Black', fontSize: 36, color: '#ffffff',
-            stroke: '#00ffff', strokeThickness: 6,
-            align: 'center'
-        }).setOrigin(0.5).setInteractive();
 
         // Initialize table with Texas Hold'em configuration
         const gameConfig: GameConfig = {
@@ -93,6 +58,55 @@ export class Game extends Scene
 
         this.createActionButtons();
 
+        // Add UI elements      
+        const chipsLabel = this.add.text(25, 25, 'Chips: ', {
+            fontFamily: 'Courier New', fontSize: 30, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 3, fontStyle: 'bold',
+            align: 'left'
+        }).setOrigin(0.0);
+
+        const potLabel = this.add.text(25, 60, 'Pot Size: ', {
+            fontFamily: 'Courier New', fontSize: 30, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 3, fontStyle: 'bold',
+            align: 'left'
+        }).setOrigin(0.0);
+
+        this.chipsDisplay = this.add.text(150, 28, `${this.table.players[0].currentChips.toString()}`, {
+            fontFamily: 'Courier New', fontSize: 30, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 3,
+            align: 'left'
+        }).setOrigin(0.0);
+        
+        this.potDisplay = this.add.text(200, 63, `${this.table.pot.toString()}`, {
+          fontFamily: 'Courier New', fontSize: 30, color: '#ffffff',
+          stroke: '#000000', strokeThickness: 3,
+          align: 'left'
+        }).setOrigin(0.0);
+
+        const dealButton = this.add.text(c.GAME_WIDTH-100,50, 'DEAL', {
+            fontFamily: 'Arial Black', fontSize: 48, color: '#ffffff',
+            stroke: '#FF0000', strokeThickness: 6,
+            align: 'center'
+        }).setOrigin(0.5).setInteractive( { useHandCursor: true } );
+
+        const mainMenuButton = this.add.text(c.GAME_WIDTH - 250, 100, "Menu", {
+            fontFamily: 'Arial Black', fontSize: 48, color: '#ffffff',
+            stroke: '#00ffff', strokeThickness: 6,
+            align: 'center'
+        }).setOrigin(0.5).setInteractive( { useHandCursor: true } );
+
+        const evalButton = this.add.text(c.GAME_WIDTH-100, 200, 'EVAL', {
+            fontFamily: 'Arial Black', fontSize: 48, color: '#ffffff',
+            stroke: '#FF0000', strokeThickness: 6,
+            align: 'center'
+        }).setOrigin(0.5).setInteractive( { useHandCursor: true } );
+
+        const chipsDebugBtn = this.add.text(150, c.GAME_HEIGHT-100, "Add Chips", {
+            fontFamily: 'Arial Black', fontSize: 36, color: '#ffffff',
+            stroke: '#00ffff', strokeThickness: 6,
+            align: 'center'
+        }).setOrigin(0.5).setInteractive( { useHandCursor: true } );
+
         chipsDebugBtn.on('pointerdown', () => {
             if (this.table.players[0]) {
                 this.table.players[0].currentChips += 1000;
@@ -100,7 +114,7 @@ export class Game extends Scene
         });
 
         dealButton.on('pointerdown', () => {
-            if (this.table.currentState === GameState.IDLE) {
+            if (this.table.gameState === GameState.IDLE) {
                 this.startNewHand();
             }
         });
@@ -146,6 +160,7 @@ export class Game extends Scene
     update() {
 
       this.chipsDisplay.text = this.table.players[0].currentChips.toString();
+      this.potDisplay.text = this.table.pot.toString();
     }
     private renderCards(): void {
         
@@ -172,88 +187,98 @@ export class Game extends Scene
         turn  .setDataEnabled();
         river .setDataEnabled();
 
-        p1c1  .data.set('card', this.table.players[0]?.currentHand?.cards[0].name);
-        p1c2  .data.set('card', this.table.players[0]?.currentHand?.cards[1].name);
-        p2c1  .data.set('card', this.table.players[1]?.currentHand?.cards[0].name);
-        p2c2  .data.set('card', this.table.players[1]?.currentHand?.cards[1].name);
-        flop1 .data.set('card', this.table.board.flops[0][0].name);
-        flop2 .data.set('card', this.table.board.flops[0][1].name);
-        flop3 .data.set('card', this.table.board.flops[0][2].name);
-        turn  .data.set('card', this.table.board.turns[0]   .name);
-        river .data.set('card', this.table.board.rivers[0]  .name);
-        
-        this.tweens.add({
+        if (this.table.gameState === GameState.DEALING || this.table.gameState === GameState.IDLE) {
+          p1c1  .data.set('card', this.table.players[0]?.currentHand?.cards[0].name);
+          p1c2  .data.set('card', this.table.players[0]?.currentHand?.cards[1].name);
+          p2c1  .data.set('card', this.table.players[1]?.currentHand?.cards[0].name);
+          p2c2  .data.set('card', this.table.players[1]?.currentHand?.cards[1].name);
+
+          this.tweens.add({
             targets: p1c1,
             props: {
-                scaleX: { value: 0, duration: 1000, yoyo: true },
-                texture: { value: p1c1.data.get('card'), duration: 0, delay: 1000 }
+              scaleX: { value: 0, duration: 1000, yoyo: true },
+              texture: { value: p1c1.data.get('card'), duration: 0, delay: 1000 }
             },
             ease: 'Linear'
-        });
-        this.tweens.add({
+          });
+          this.tweens.add({
             targets: p1c2,
             props: {
-                scaleX: { value: 0, duration: 1000, yoyo: true },
-                texture: { value: p1c2.data.get('card'), duration: 0, delay: 1000 }
+              scaleX: { value: 0, duration: 1000, yoyo: true },
+              texture: { value: p1c2.data.get('card'), duration: 0, delay: 1000 }
             },
             ease: 'Linear'
-        });
-        this.tweens.add({
+          });
+          this.tweens.add({
             targets: p2c1,
             props: {
-                scaleX: { value: 0, duration: 1000, yoyo: true },
-                texture: { value: p2c1.data.get('card'), duration: 0, delay: 1000 }
+              scaleX: { value: 0, duration: 1000, yoyo: true },
+              texture: { value: p2c1.data.get('card'), duration: 0, delay: 1000 }
             },
             ease: 'Linear'
-        });
-        this.tweens.add({
+          });
+          this.tweens.add({
             targets: p2c2,
             props: {
-                scaleX: { value: 0, duration: 1000, yoyo: true },
-                texture: { value: p2c2.data.get('card'), duration: 0, delay: 1000 }
+              scaleX: { value: 0, duration: 1000, yoyo: true },
+              texture: { value: p2c2.data.get('card'), duration: 0, delay: 1000 }
             },
             ease: 'Linear'
-        });
-        this.tweens.add({
+          });
+
+        } else if (this.table.gameState === GameState.PREFLOP || this.table.gameState === GameState.FLOP) {
+          flop1 .data.set('card', this.table.board.flops[0][0].name);
+          flop2 .data.set('card', this.table.board.flops[0][1].name);
+          flop3 .data.set('card', this.table.board.flops[0][2].name);
+
+          this.tweens.add({
             targets: flop1,
             props: {
-                scaleX: { value: 0, duration: 1000, yoyo: true },
-                texture: { value: flop1.data.get('card'), duration: 0, delay: 1000 }
+              scaleX: { value: 0, duration: 1000, yoyo: true },
+              texture: { value: flop1.data.get('card'), duration: 0, delay: 1000 }
             },
             ease: 'Linear'
-        });
-        this.tweens.add({
+          });
+          this.tweens.add({
             targets: flop2,
             props: {
-                scaleX: { value: 0, duration: 1000, yoyo: true },
-                texture: { value: flop2.data.get('card'), duration: 0, delay: 1000 }
+              scaleX: { value: 0, duration: 1000, yoyo: true },
+              texture: { value: flop2.data.get('card'), duration: 0, delay: 1000 }
             },
             ease: 'Linear'
-        });
-        this.tweens.add({
+          });
+          this.tweens.add({
             targets: flop3,
             props: {
-                scaleX: { value: 0, duration: 1000, yoyo: true },
-                texture: { value: flop3.data.get('card'), duration: 0, delay: 1000 }
+              scaleX: { value: 0, duration: 1000, yoyo: true },
+              texture: { value: flop3.data.get('card'), duration: 0, delay: 1000 }
             },
             ease: 'Linear'
-        });
-        this.tweens.add({
+          });
+        } else if (this.table.gameState === GameState.TURN) {
+          turn  .data.set('card', this.table.board.turns[0]   .name);
+
+          this.tweens.add({
             targets: turn,
             props: {
-                scaleX: { value: 0, duration: 1000, yoyo: true },
-                texture: { value: turn.data.get('card'), duration: 0, delay: 1000 }
+              scaleX: { value: 0, duration: 1000, yoyo: true },
+              texture: { value: turn.data.get('card'), duration: 0, delay: 1000 }
             },
             ease: 'Linear'
-        });
-        this.tweens.add({
+          });
+        }
+        else if (this.table.gameState === GameState.RIVER) {
+          river .data.set('card', this.table.board.rivers[0]  .name);
+
+          this.tweens.add({
             targets: river,
             props: {
-                scaleX: { value: 0, duration: 1000, yoyo: true },
-                texture: { value: river.data.get('card'), duration: 0, delay: 1000 }
+              scaleX: { value: 0, duration: 1000, yoyo: true },
+              texture: { value: river.data.get('card'), duration: 0, delay: 1000 }
             },
             ease: 'Linear'
         });
+      }
     }
 
     private createActionButtons(): void {
@@ -275,16 +300,16 @@ export class Game extends Scene
     }
 
     private startNewHand(): void {
-        this.table.currentState = GameState.DEALING;
+        this.table.gameState = GameState.DEALING;
         this.table.clearTable();
-        this.table.dealCards();
+        this.table.dealCards(this);
         this.renderCards();
         
         // Post blinds
         this.table.players[this.table.smallBlindToken].placeBet(this.table.smallBlindAmount);
         this.table.players[this.table.bigBlindToken].placeBet(this.table.bigBlindAmount);
         
-        this.table.currentState = GameState.PREFLOP;
+        this.table.gameState = GameState.PREFLOP;
         this.showActionButtons();
     }
 

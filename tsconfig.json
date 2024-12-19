@@ -16,7 +16,7 @@
         "isolatedModules": true,
         "noImplicitAny": false,
         /* Linting */
-        "strict": true,
+        "strict": false,
         "strictPropertyInitialization": false,
         "noUnusedLocals": false,
         "noUnusedParameters": false,

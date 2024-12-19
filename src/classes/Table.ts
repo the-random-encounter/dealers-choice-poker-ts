@@ -26,43 +26,47 @@ export default class Table {
   gameConfig: GameConfig;
   burnPile: Card[] = [];
   dealOrder: Array<Array<Player | string>>;
-  currentState: GameState = GameState.IDLE;
+  gameState: GameState = GameState.IDLE;
   currentBet: number = 0;
   activePlayerIndex: number = 0;
+  betMade: boolean = false;
+  resolvedBetPlayers: Player[] = [];
   
-  smallBlindAmount: number = 10;
-  bigBlindAmount: number = 20;
+  smallBlindAmount: number = 5;
+  bigBlindAmount: number = 10;
   
   dealerToken: number = 0;
   smallBlindToken: number = 0;
   bigBlindToken: number = this.smallBlindToken + 1;
 
-  constructor(tableName: string, config: GameConfig, gameScene: Scene) {
+  constructor(tableName: string, config: GameConfig, gameScene: Scene, smallBlindAmount = 5, bigBlingAmount = 10) {
     this.tableName = tableName;
     this.tableID = this.generateTableID();
     this.gameConfig = config;
     this.gameScene = gameScene;
     this.deck = new Deck(true);
+    this.smallBlindAmount = smallBlindAmount;
+    this.bigBlindAmount = bigBlingAmount;
 
 
     if (this.players.length > 2) {
       this.smallBlind = this.players[1];
       this.bigBlind = this.players[2];
 
-      this.players[1].currentBlind = 'Small';
-      this.players[2].currentBlind = 'Big';
+      this.players[1].currentBlind = 'small';
+      this.players[2].currentBlind = 'big';
 
     } else if (this.players.length === 2) {
       this.smallBlind = this.players[0];
       this.bigBlind = this.players[1];
 
-      this.players[0].currentBlind = 'Small';
-      this.players[1].currentBlind = 'Big';
+      this.players[0].currentBlind = 'small';
+      this.players[1].currentBlind = 'big';
 
     } else if (this.players.length === 1) {
       this.smallBlind = this.players[0];
 
-      this.players[0].currentBlind = 'Small';
+      this.players[0].currentBlind = 'small';
     }
   }
 
@@ -131,10 +135,9 @@ export default class Table {
     if (nextDeal) {
       if (nextDeal[0] === 'burn') {
         this.burnPile.push(this.deck.draw());
-
-        const burnImg = this.gameScene.add.image(c.GAME_WIDTH - 200 + (Math.random() * 100), c.GAME_HEIGHT - 100 + (Math.random() * 100), 'cardback').setOrigin(0.5);
-
+        const burnImg = this.gameScene.add.image(c.GAME_WIDTH - 200 + (Math.random() * 20 - 10), c.GAME_HEIGHT - 100 + (Math.random() * 20 - 10), 'cardback').setOrigin(0.5);
       }
+
       else if (nextDeal[0] === 'flop') {
         let flop: Card[] = [];
         for (let i = 0; i < 3; i++)
@@ -152,65 +155,80 @@ export default class Table {
       }
     }
   }
-  dealCards(): void {
+  dealCards(gameScene: Scene): void {
     // Reset and shuffle deck
-    this.deck.regenerateDeck();
-    this.deck.shuffleDeck();
+    switch (this.gameState) {
+      case GameState.IDLE:
+        this.deck = new Deck(true);
+        this.clearTable();
+        this.burnPile = [];
+        this.dealPlayerCards(this.deck, gameScene);
+        break;
+      case GameState.DEALING:
+        break;
+      case GameState.PREFLOP:
+        this.dealPlayerCards(this.deck, gameScene);
+        break;
+      case GameState.FLOP:
+        this.dealFlop();
+        break;
+      case GameState.TURN:
+        this.dealTurn();
+        break;
+      case GameState.RIVER:
+        this.dealRiver();
+        break;
+    }
 
-    // Deal cards to players
+    return;
+
+  }
+
+  dealPlayerCards(deck: Deck, gameScene: Scene): void {
+    
     for (let i = 0; i < this.gameConfig.cardsPerPlayer; i++) {
-      for (const player of this.players) {
-        const card = this.deck.draw();
-        if (!player.currentHand) {
+      for (let j = this.dealerToken; j < this.players.length; j++) {
+        const card = deck.draw();
+        const player = this.players[j];
+        if (!player.currentHand)
           player.currentHand = new Hand([]);
-        }
+
         player.currentHand.addCard(card);
       }
     }
 
-    this.burnPile.push(this.deck.draw());
+    this.burnPile.push(deck.draw());
+  }
 
-    // Deal flops
+  dealFlop(): void {
     for (let i = 0; i < this.gameConfig.numberOfFlops; i++) {
       const flop: Card[] = [];
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < 3; j++)
         flop.push(this.deck.draw());
-      }
+
       this.board.flops.push(flop);
     }
 
     this.burnPile.push(this.deck.draw());
-
-    // Deal turns
-    for (let i = 0; i < this.gameConfig.numberOfTurns; i++) {
-      this.board.turns.push(this.deck.draw());
-    }
-
-    this.burnPile.push(this.deck.draw());
-
-    // Deal rivers
-    for (let i = 0; i < this.gameConfig.numberOfRivers; i++) {
-      this.board.rivers.push(this.deck.draw());
-    }
-  }
-
-  dealFlop(): void {
-
   }
 
   dealTurn(): void {
+    for (let i = 0; i < this.gameConfig.numberOfTurns; i++)
+      this.board.turns.push(this.deck.draw());
 
+    this.burnPile.push(this.deck.draw());
   }
 
   dealRiver(): void {
-
+    for (let i = 0; i < this.gameConfig.numberOfRivers; i++)
+      this.board.rivers.push(this.deck.draw());
   }
 
   clearTable(): void {
     // Clear all hands
-    for (const player of this.players) {
+    for (const player of this.players)
       player.currentHand = undefined;
-    }
+
 
     // Clear board
     this.board = { flops: [], turns: [], rivers: [] };
@@ -241,21 +259,21 @@ export default class Table {
   }
 
   moveToNextPhase(): void {
-    switch (this.currentState) {
+    switch (this.gameState) {
       case GameState.PREFLOP:
-        this.currentState = GameState.FLOP;
+        this.gameState = GameState.FLOP;
         this.dealFlop();
         break;
       case GameState.FLOP:
-        this.currentState = GameState.TURN;
+        this.gameState = GameState.TURN;
         this.dealTurn();
         break;
       case GameState.TURN:
-        this.currentState = GameState.RIVER;
+        this.gameState = GameState.RIVER;
         this.dealRiver();
         break;
       case GameState.RIVER:
-        this.currentState = GameState.SHOWDOWN;
+        this.gameState = GameState.SHOWDOWN;
         this.determineWinner();
         break;
     }
@@ -274,9 +292,9 @@ export default class Table {
 
   private getNextActivePlayer(): number {
     let next = (this.activePlayerIndex + 1) % this.players.length;
-    while (this.players[next].isFolded) {
+    while (this.players[next].isFolded)
       next = (next + 1) % this.players.length;
-    }
+
     return next;
   }
 
@@ -301,9 +319,9 @@ export default class Table {
       if (evaluation.value > bestHand) {
         bestHand = evaluation.value;
         winners = [player];
-      } else if (evaluation.value === bestHand) {
+      } else if (evaluation.value === bestHand)
         winners.push(player);
-      }
+
     }
 
     this.awardPot(winners);
@@ -313,9 +331,9 @@ export default class Table {
     if (Array.isArray(winners)) {
       const share = Math.floor(this.pot / winners.length);
       winners.forEach(w => w.currentChips += share);
-    } else {
+    } else
       winners.currentChips += this.pot;
-    }
+
     this.pot = 0;
   }
 }

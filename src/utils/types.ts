@@ -15,7 +15,9 @@ export type CardName = 'AH' | '2H' | '3H' | '4H' | '5H' | '6H' | '7H' | '8H' | '
 export type HandType = Card[];
 
 export type TableRole = 'Dealer' | 'SmallBlind' | 'BigBlind' | 'None';
-export type BlindType = 'Small' | 'Big' | 'None';
+export type BlindType = 'small' | 'big' | 'none';
+
+export type GameVariant = 'TexasHoldEm' | 'Omaha' ;
 
 export interface Board {
   flops: Array<Card[]>;
@@ -27,8 +29,6 @@ export interface HandEvaluation {
   string: string;
   value: number;
 }
-
-export type GameVariant = 'TexasHoldEm' | 'Omaha' ;
 
 export interface GameConfig {
   variant: GameVariant;
