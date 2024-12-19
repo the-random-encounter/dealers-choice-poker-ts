@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="./favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous" >
     <link rel="stylesheet" href="./style.css">
     <title>Phaser - Template</title>
 </head>
@@ -13,5 +14,25 @@
         <div id="game-container"></div>
     </div>
     <script type="module" src="src/main.js"></script>
+
+    <div class="bet-amount-group">
+      <label for="bet-amount">Bet</label>
+      <input 
+        id="bet-amount"
+        type="text"
+        name="inputName"
+        class="form-control"
+        aria-describedby="betHelp"
+        required
+        pattern="[0-9]+"
+      >
+      <small id="betHelp" class="help-text">Enter the amount of chips you would like to bet.</small>
+      <button class="btn btn-success" id="btnBet" name="btnBet">
+        Bet
+      </button>
+      <button class="btn btn-danger" id="btnClear" name="btnClear">
+        Clear
+      </button>
+    </div>
 </body>
 </html>
