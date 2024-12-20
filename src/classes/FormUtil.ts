@@ -92,7 +92,7 @@ export default class FormUtil {
         return s;
     }
     //add a change callback
-    addChangeCallback(elName, fun, scope = null) {
+    addChangeCallback(elName, fun, scope: Phaser.Scene | null = null) {
         const el = document.getElementById(elName);
         if (scope == null) {
             el!.onchange = fun;
@@ -147,7 +147,7 @@ export default class FormUtil {
 
     }
 
-    addClickCallback(elName, fun, scope = null) {
+    addClickCallback(elName, fun, scope: Phaser.Scene | null = null) {
         const el = document.getElementById(elName);
         if (scope == null) {
             el!.onclick = fun;
