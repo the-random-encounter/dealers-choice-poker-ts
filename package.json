@@ -45,7 +45,8 @@
   },
   "dependencies": {
     "colyseus": "^0.15.57",
-    "phaser": "^3.87.0"
+    "phaser": "^3.87.0",
+    "phaser3-rex-plugins": "^1.80.12"
   },
   "transform": {
     "\\.js$": "<rootDir>/node_modules/babel-jest"

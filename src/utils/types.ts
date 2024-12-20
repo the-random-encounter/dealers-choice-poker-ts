@@ -85,7 +85,7 @@ export enum GameState {
   SHOWDOWN = 'SHOWDOWN'
 }
 
-export type PlayerAction = 'check' | 'bet' | 'call' | 'raise' | 'fold';
+export type PlayerAction = 'Check' | 'Bet' | 'Call' | 'Raise' | 'Fold';
 
 export interface BetInfo {
   amount: number;
