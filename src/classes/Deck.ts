@@ -32,15 +32,15 @@ export default class Deck {
 
   cards: Card[];
 
-  constructor(autoShuffle: boolean = false) {
+  constructor(gameScene: Phaser.Scene, autoShuffle: boolean = false) {
     
     // Construct new deck, and shuffle if shuffle flag is set true
     if (autoShuffle === true) {
-      this.cards = this.generateDeck();
+      this.cards = this.generateDeck(gameScene);
       this.shuffleDeck();
     // If no shuffle flag is set, just generate new deck in order
     } else {
-      this.cards = this.generateDeck();
+      this.cards = this.generateDeck(gameScene);
     }
   }
 
@@ -61,7 +61,7 @@ export default class Deck {
   }
 
 
-  private generateDeck(): Card[] {
+  private generateDeck(gameScene: Phaser.Scene): Card[] {
     const suits: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
     const ranks: Rank[] = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'jack', 'queen', 'king', 'ace'];
 
@@ -70,18 +70,18 @@ export default class Deck {
     // Generate deck contents in order, so that the deck is always the same
     for (const suit of suits) {
       for (const rank of ranks) {
-        const card = new Card(suit, rank);
+        const card = new Card(gameScene, 0, 0, suit, rank);
         cardArray.push(card);
       }
     }
     return cardArray;
   }
 
-  regenerateDeck(): void {
+  regenerateDeck(gameScene: Phaser.Scene): void {
 
     this.cards = [];
 
-    this.cards = this.generateDeck();
+    this.cards = this.generateDeck(gameScene);
   }
 
   shuffleDeck(): void {

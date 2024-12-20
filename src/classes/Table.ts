@@ -44,7 +44,7 @@ export default class Table {
     this.tableID = this.generateTableID();
     this.gameConfig = config;
     this.gameScene = gameScene;
-    this.deck = new Deck(true);
+    this.deck = new Deck(this.gameScene, true);
     this.smallBlindAmount = smallBlindAmount;
     this.bigBlindAmount = bigBlingAmount;
 
@@ -159,7 +159,7 @@ export default class Table {
     // Reset and shuffle deck
     switch (this.gameState) {
       case GameState.IDLE:
-        this.deck = new Deck(true);
+        this.deck = new Deck(this.gameScene, true);
         this.clearTable();
         this.burnPile = [];
         this.dealPlayerCards(this.deck, gameScene);
@@ -187,14 +187,17 @@ export default class Table {
   dealPlayerCards(deck: Deck, gameScene: Scene): void {
     
     for (let i = 0; i < this.gameConfig.cardsPerPlayer; i++) {
+      let cardList: Card[] = [];
       for (let j = this.dealerToken; j < this.players.length; j++) {
         const card = deck.draw();
         const player = this.players[j];
+        
         if (!player.currentHand)
           player.currentHand = new Hand([]);
-
+        cardList.push(card);
         player.currentHand.addCard(card);
       }
+      this.dealingAnim(gameScene, cardList, { x: c.GAME_X_MID, y: c.GAME_Y_3F })
     }
 
     this.burnPile.push(deck.draw());
@@ -280,17 +283,32 @@ export default class Table {
     this.resetBets();
   }
 
+  advanceGameState(): GameState {
+    this.moveToNextPhase();
+    return this.gameState;
+  }
+
+  getGameState(): GameState {
+    return this.gameState;
+  }
+
   private resetBets(): void {
     this.currentBet = 0;
     this.players.forEach(p => p.resetBets());
   }
 
   collectBets(): void {
-    this.pot += this.players.reduce((sum, p) => sum + p.currentBet, 0);
+    //this.pot += this.players.reduce((sum, p) => sum + p.currentBet, 0);
+    this.players.forEach(p => this.collectBet(p));
     this.resetBets();
   }
 
-  private getNextActivePlayer(): number {
+  collectBet(player: Player): void {
+    this.pot += player.currentBet;
+    player.currentChips -= player.currentBet;
+  }
+
+  getNextActivePlayer(): number {
     let next = (this.activePlayerIndex + 1) % this.players.length;
     while (this.players[next].isFolded)
       next = (next + 1) % this.players.length;
@@ -336,4 +354,35 @@ export default class Table {
 
     this.pot = 0;
   }
+
+  dealingAnim(context, cardList, pos) {
+  const tweenChain = context.tweens.chain({
+    tweens: [
+      {
+        targets: cardList,
+        x: function (a, b, c, d) {
+          return pos.x + 85 * d; // calculate the next position of each card
+        },
+        y: pos.y,
+        duration: 900, // duration of the tween
+        angle: { from: 180, to: 0 }, // animate angle from 180 deg to 0
+        delay: context.tweens.stagger(100, { start: 0 }), // stagger delay
+        ease: Phaser.Math.Easing.Sine.Out // ease function
+      },
+      {
+        targets: cardList, // second phase of the tween
+        props: {
+          scaleX: { value: 0, duration: 300, yoyo: true } // scale X with yoyo
+        },
+        // onYoyo: function (tween, target) {
+        //   target.setTexture(target.cardValue); // change card texture to front
+        // },
+        ease: Phaser.Math.Easing.Linear // ease function
+      }
+    ],
+    paused: false,
+    repeat: 0
+  });
+  return tweenChain;
+}
 }

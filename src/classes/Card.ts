@@ -5,6 +5,9 @@ import * as CONSTS from '../utils/constants';
 /**
  * Represents a playing card.
  * @class
+ * @param scene - The scene to play the card in.
+ * @param x - The x-coordinate of the card.
+ * @param y - The y-coordinate of the card.
  * @param arg1 - Can be a Rank, Suit, RankValue, or CardName.
  * @param arg2 - Can be a Rank, RankValue, or Suit.
  * @example <caption>Creating a new Card instance with a Rank and Suit</caption>
@@ -14,24 +17,37 @@ import * as CONSTS from '../utils/constants';
  * @example <caption>Creating a new Card instance with a CardName</caption>
  * const card = new Card('JS'); // Jack of Spades
  */
-export default class Card {
+export default class Card extends Phaser.GameObjects.Image {
+  cardback: string;
+  cardface: string;
   suit:   Suit;
   rank:   Rank;
   value:  RankValue;
-  name:   CardName;
+  declare name:   CardName;
+
 
   /**
-   * Constructs a new Card instance.
-   * @constructor
-   * @param arg1 - Can be a Rank, Suit, RankValue, or CardName.
-   * @param arg2 - Can be a Rank, RankValue, or Suit.
+   * Creates a new Card instance.
+   * @param scene - The Phaser scene to create the card in.
+   * @param x - The x-coordinate of the card.
+   * @param y - The y-coordinate of the card.
+   * @param arg1 - The first argument, can be a Rank, Suit, RankValue, or CardName.
+   * @param arg2 - The second argument, can be a Rank, RankValue, or Suit.
+   * @throws {Error} If the arguments are invalid.
    */
-  constructor(arg1?: Rank | Suit | RankValue | string, arg2?: Rank | RankValue | Suit) {
+  constructor(scene: Phaser.Scene, x: number, y: number, arg1?: Rank | Suit | RankValue | string, arg2?: Rank | RankValue | Suit) {
+    
+    super(scene, x, y, 'cardback');
+
+    this.cardback = 'cardback';
+    this.cardface = '';
+    
     if (this.isCardName(arg1)) {
       this.name = arg1;
       this.suit = this.suitFromName(arg1.charAt(arg1.length - 1));
       this.rank = this.rankFromName(arg1.charAt(0));
       this.value = this.rankToValue(this.rank);
+      this.cardface = `card_${this.rank}_${this.suit}`; // Set cardface texture key
     } else if (this.isRankAndSuit(arg1, arg2)) {
       this.assignRankAndSuit(arg1 as Rank | Suit | RankValue, arg2 as Rank | Suit | RankValue);
     } else {
@@ -58,6 +74,14 @@ export default class Card {
     return arg1 && arg2 && isRankOrSuit(arg1) && isRankOrSuit(arg2);
   }
 
+  /**
+   * Flips the card to show either the front or the back.
+   * If the card is currently showing the back, it will show the front, and vice versa.
+   */
+  flipCard(): void {
+    this.setTexture(this.texture.key === this.cardback ? this.cardface : this.cardback);
+  }
+  
   /**
    * Assigns the rank and suit based on the provided arguments.
    * @param arg1 - The first argument (Rank, Suit, or RankValue).
@@ -255,3 +279,8 @@ export default class Card {
     return `${capRank} of ${capSuit}`;
   }
 }
+
+Phaser.GameObjects.GameObjectFactory.register('card', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number)
+{
+    return this.displayList.add(new Card(this.scene, x, y));
+});
