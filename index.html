@@ -11,10 +11,10 @@
 
 <body>
     <div id="app">
-        <div id="game-container"></div>
+        <div id="game-container">
+              <script type="module" src="src/main.js"/></script>
+        </div>
     </div>
-    <script type="module" src="src/main.js"></script>
-
     <div class="bet-amount-group">
       <label for="bet-amount">Bet</label>
       <input 
@@ -26,6 +26,7 @@
         required
         pattern="[0-9]+"
       >
+      <textarea id="area51">SOME TEXT HERE</textarea>
       <small id="betHelp" class="help-text">Enter the amount of chips you would like to bet.</small>
       <button class="btn btn-success" id="btnBet" name="btnBet">
         Bet
