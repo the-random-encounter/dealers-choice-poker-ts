@@ -35,19 +35,19 @@ export default class Player extends Top {
     else {
       this.currentChips -= amount;
       this.currentBet += amount;
-      this.lastAction = 'bet';
+      this.lastAction = 'Bet';
       return true;
     }
   }
 
   checkBet(): boolean {
-    this.lastAction = 'check';
+    this.lastAction = 'Check';
     return true;
   }
 
   fold(): void {
     this.isFolded = true;
-    this.lastAction = 'fold';
+    this.lastAction = 'Fold';
   }
 
   resetBets(): void {
