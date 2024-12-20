@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "my-app",
+  "name": "dealers-choice-poker-server",
   "version": "1.0.0",
-  "description": "npm init template for bootstrapping an empty Colyseus project",
+  "description": "Development project for server implementation for Dealer's Choice Poker game.",
   "main": "build/index.js",
   "engines": {
     "node": ">= 16.13.0"
