@@ -8,6 +8,7 @@ export default class Player extends Top {
   userID: integer;
   username: string;
   displayName: string;
+  sessionId: string;
   wallet: number;
   currentTableID?: number;
   table?: Table;
@@ -22,9 +23,10 @@ export default class Player extends Top {
   hasCalledBet: boolean = false;
   hasRaised: boolean = false;
 
-  constructor(username: string, displayName: string) {
+  constructor(sessionId: string,username: string, displayName: string) {
     super();
     this.username = username;
+    this.sessionId = sessionId;
     this.displayName = displayName;
     this.wallet = 0;
     this.currentChips = 0;

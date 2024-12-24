@@ -5,7 +5,7 @@ import Hand from './Hand';
 import Phaser, { Scene } from 'phaser';
 import * as funcs from '../utils/functions';
 import * as CONSTS from '../utils/constants';
-import { GameConfig, Board, GameState } from '../utils/types';
+import { GameConfig, Board, GameState, PlayerAction } from '../utils/types';
 import { Game } from '../scenes/Game';
 
 const c = CONSTS;
@@ -40,6 +40,7 @@ export default class Table {
   bigBlindToken: number = this.smallBlindToken + 1;
 
   constructor(tableName: string, config: GameConfig, gameScene: Scene, smallBlindAmount = 5, bigBlingAmount = 10) {
+    console.log(`New table created!`);
     this.tableName = tableName;
     this.tableID = this.generateTableID();
     this.gameConfig = config;
@@ -160,14 +161,13 @@ export default class Table {
     switch (this.gameState) {
       case GameState.IDLE:
         this.deck = new Deck(this.gameScene, true);
-        this.clearTable();
         this.burnPile = [];
-        this.dealPlayerCards(this.deck, gameScene);
         break;
       case GameState.DEALING:
+        this.dealPlayerCards(this.deck, gameScene);
         break;
       case GameState.PREFLOP:
-        this.dealPlayerCards(this.deck, gameScene);
+        
         break;
       case GameState.FLOP:
         this.dealFlop();
@@ -189,6 +189,9 @@ export default class Table {
     for (let i = 0; i < this.gameConfig.cardsPerPlayer; i++) {
       let cardList: Card[] = [];
       for (let j = this.dealerToken; j < this.players.length; j++) {
+        if (j === this.players.length)
+          j = 0;
+        
         const card = deck.draw();
         const player = this.players[j];
         
@@ -197,10 +200,8 @@ export default class Table {
         cardList.push(card);
         player.currentHand.addCard(card);
       }
-      this.dealingAnim(gameScene, cardList, { x: c.GAME_X_MID, y: c.GAME_Y_3F })
+      //this.dealingAnim(gameScene, cardList, { x: c.GAME_X_MID, y: c.GAME_Y_3F })
     }
-
-    this.burnPile.push(deck.draw());
   }
 
   dealFlop(): void {
@@ -208,23 +209,22 @@ export default class Table {
       const flop: Card[] = [];
       for (let j = 0; j < 3; j++)
         flop.push(this.deck.draw());
-
       this.board.flops.push(flop);
     }
-
-    this.burnPile.push(this.deck.draw());
   }
 
   dealTurn(): void {
     for (let i = 0; i < this.gameConfig.numberOfTurns; i++)
       this.board.turns.push(this.deck.draw());
-
-    this.burnPile.push(this.deck.draw());
   }
 
   dealRiver(): void {
     for (let i = 0; i < this.gameConfig.numberOfRivers; i++)
       this.board.rivers.push(this.deck.draw());
+  }
+
+  dealBurn(): void {
+    this.burnPile.push(this.deck.draw());
   }
 
   clearTable(): void {
@@ -245,20 +245,43 @@ export default class Table {
   processBettingRound(): void {
     const currentPlayer = this.players[this.activePlayerIndex];
     
-    // Check if round is complete (all players have equal bets or folded)
-    if (this.isBettingComplete()) {
-      this.moveToNextPhase();
+    // Skip folded players
+    if (currentPlayer.isFolded) {
+      this.activePlayerIndex = this.getNextActivePlayer();
       return;
     }
 
-    // Move to next active player
-    this.activePlayerIndex = this.getNextActivePlayer();
+    // Check if betting round is complete
+    if (this.isBettingComplete()) {
+      this.collectBets();
+      this.advanceGameState();
+      // Reset player states for new betting round
+      this.players.forEach(p => {
+        p.hasCalledBet = false;
+        p.hasRaised = false;
+        p.hasPostedBlind = false;
+      });
+      return;
+    }
+
+    // Update valid actions for current player
+    const validActions = this.getValidActions(currentPlayer);
+    
+    // Emit event for UI to update available actions
+    (this.gameScene as Game).events.emit('updatePlayerActions', validActions);
   }
 
   isBettingComplete(): boolean {
     const activePlayers = this.players.filter(p => !p.isFolded);
-    const bets = new Set(activePlayers.map(p => p.currentBet));
-    return bets.size === 1;
+    
+    // All active players must have:
+    // 1. Matched the current bet
+    // 2. Acted after the last raise
+    // 3. Posted their blind if required
+    return activePlayers.every(p => 
+      (p.currentBet === this.currentBet) && 
+      (p.hasCalledBet || p.hasRaised || p.hasPostedBlind)
+    );
   }
 
   moveToNextPhase(): void {
@@ -281,11 +304,6 @@ export default class Table {
         break;
     }
     this.resetBets();
-  }
-
-  advanceGameState(): GameState {
-    this.moveToNextPhase();
-    return this.gameState;
   }
 
   getGameState(): GameState {
@@ -384,5 +402,94 @@ export default class Table {
     repeat: 0
   });
   return tweenChain;
+}
+
+startNewHand(): void {
+  // Reset everything
+  this.gameState = GameState.DEALING;
+  this.clearTable();
+  this.deck = new Deck(this.gameScene, true);
+  this.pot = 0;
+  this.currentBet = 0;
+  this.burnPile = [];
+  
+  // Deal cards to players
+  this.dealPlayerCards(this.deck, this.gameScene);
+  
+  // Post blinds
+  this.players[this.smallBlindToken].postBlind('small');
+  this.players[this.bigBlindToken].postBlind('big');
+  
+  // Set initial betting round
+  this.gameState = GameState.PREFLOP;
+  this.activePlayerIndex = (this.bigBlindToken + 1) % this.players.length;
+}
+
+advanceGameState(): void {
+  // Reset player action flags
+  this.players.forEach(p => {
+    p.hasCalledBet = false;
+    p.hasRaised = false;
+  });
+
+  switch (this.gameState) {
+    case GameState.PREFLOP:
+      this.gameState = GameState.FLOP;
+      this.dealBurn();
+      this.dealFlop();
+      break;
+    case GameState.FLOP:
+      this.gameState = GameState.TURN;
+      this.dealBurn();
+      this.dealTurn();
+      break;
+    case GameState.TURN:
+      this.gameState = GameState.RIVER;
+      this.dealBurn();
+      this.dealRiver();
+      break;
+    case GameState.RIVER:
+      this.gameState = GameState.SHOWDOWN;
+      this.determineWinner();
+      break;
+    case GameState.SHOWDOWN:
+      this.gameState = GameState.IDLE;
+      this.advanceRound(); // Move dealer button and blinds
+      break;
+  }
+
+  // Reset for next betting round
+  if (this.gameState !== GameState.SHOWDOWN && this.gameState !== GameState.IDLE) {
+    this.activePlayerIndex = (this.dealerToken + 1) % this.players.length;
+    this.currentBet = 0;
+  }
+}
+
+canPlayerCheck(player: Player): boolean {
+  // Player can check if they've matched the current bet
+  return player.currentBet === this.currentBet;
+}
+
+canPlayerCall(player: Player): boolean {
+  const callAmount = this.currentBet - player.currentBet;
+  return callAmount > 0 && callAmount <= player.currentChips;
+}
+
+canPlayerRaise(player: Player): boolean {
+  // Need at least enough chips for current bet plus minimum raise
+  return (this.currentBet - player.currentBet + this.bigBlindAmount) <= player.currentChips;
+}
+
+getValidActions(player: Player): PlayerAction[] {
+  const actions: PlayerAction[] = ['Fold'];
+  
+  if (this.canPlayerCheck(player)) actions.push('Check');
+  if (this.canPlayerCall(player)) actions.push('Call');
+  if (this.canPlayerRaise(player)) {
+    actions.push('Bet');
+    actions.push('Raise');
+  }
+  
+  return actions;
 }
 }

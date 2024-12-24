@@ -137,8 +137,8 @@ export const CARD_SLOTS: CardSlots = {
           },
           p3: {
             TexasHoldEm: [
-              { x: (GAME_X_MID - 300), y: (GAME_Y_MID)},
-              { x: (GAME_X_MID - 200), y: (GAME_Y_MID)}
+              { x: (GAME_X_MID - 50), y: (100)},
+              { x: (GAME_X_MID + 50), y: (100)}
             ],
             Omaha: [
               { x: 0, y: 0 },
@@ -149,8 +149,8 @@ export const CARD_SLOTS: CardSlots = {
           },
           p4: {
             TexasHoldEm: [
-              { x: (GAME_X_MID - 300), y: (GAME_Y_MID)},
-              { x: (GAME_X_MID - 200), y: (GAME_Y_MID)}
+              { x: (GAME_X_MID + 200), y: (GAME_Y_MID)},
+              { x: (GAME_X_MID + 300), y: (GAME_Y_MID)}
             ],
             Omaha: [
               { x: 0, y: 0 },

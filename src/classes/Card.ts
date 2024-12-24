@@ -1,5 +1,6 @@
 import { isRankOrSuit, isCardName } from '../utils/functions';
 import { Suit, Rank, CardName, RankValue } from '../utils/types';
+import Phaser from 'phaser';
 import * as CONSTS from '../utils/constants';
 
 /**
@@ -17,13 +18,12 @@ import * as CONSTS from '../utils/constants';
  * @example <caption>Creating a new Card instance with a CardName</caption>
  * const card = new Card('JS'); // Jack of Spades
  */
-export default class Card extends Phaser.GameObjects.Image {
-  cardback: string;
-  cardface: string;
+export default class Card {
+
   suit:   Suit;
   rank:   Rank;
   value:  RankValue;
-  declare name:   CardName;
+  name:   CardName;
 
 
   /**
@@ -35,23 +35,18 @@ export default class Card extends Phaser.GameObjects.Image {
    * @param arg2 - The second argument, can be a Rank, RankValue, or Suit.
    * @throws {Error} If the arguments are invalid.
    */
-  constructor(scene: Phaser.Scene, x: number, y: number, arg1?: Rank | Suit | RankValue | string, arg2?: Rank | RankValue | Suit) {
-    
-    super(scene, x, y, 'cardback');
+  constructor(
+    arg1: Rank | Suit | RankValue | CardName,
+    arg2?: Rank | RankValue | Suit,
+  ) {
 
-    this.cardback = 'cardback';
-    this.cardface = '';
-    
+    // Handle different parameter combinations
     if (this.isCardName(arg1)) {
-      this.name = arg1;
-      this.suit = this.suitFromName(arg1.charAt(arg1.length - 1));
-      this.rank = this.rankFromName(arg1.charAt(0));
-      this.value = this.rankToValue(this.rank);
-      this.cardface = `card_${this.rank}_${this.suit}`; // Set cardface texture key
-    } else if (this.isRankAndSuit(arg1, arg2)) {
-      this.assignRankAndSuit(arg1 as Rank | Suit | RankValue, arg2 as Rank | Suit | RankValue);
-    } else {
-      throw new Error('Invalid arguments for Card constructor');
+    [this.rank, this.suit] = this.getRankAndSuitFromName(arg1);
+    this.name = arg1;
+    this.value = this.rankToValue(this.rank);
+    } else if (typeof arg1 === 'string' || typeof arg1 === 'number' && arg2 !== undefined) {
+      this.assignRankAndSuit(arg1, arg2 as Rank | Suit | RankValue);
     }
   }
 
@@ -72,16 +67,9 @@ export default class Card extends Phaser.GameObjects.Image {
    */
   private isRankAndSuit(arg1: any, arg2: any): boolean {
     return arg1 && arg2 && isRankOrSuit(arg1) && isRankOrSuit(arg2);
+
   }
 
-  /**
-   * Flips the card to show either the front or the back.
-   * If the card is currently showing the back, it will show the front, and vice versa.
-   */
-  flipCard(): void {
-    this.setTexture(this.texture.key === this.cardback ? this.cardface : this.cardback);
-  }
-  
   /**
    * Assigns the rank and suit based on the provided arguments.
    * @param arg1 - The first argument (Rank, Suit, or RankValue).
@@ -118,6 +106,37 @@ export default class Card extends Phaser.GameObjects.Image {
     return isRankOrSuit(value) && ['hearts', 'diamonds', 'clubs', 'spades'].includes(value);
   }
 
+  private getRankAndSuitFromName(name: CardName): [Rank, Suit] {
+    const rankChar = name.charAt(0);
+    const suitChar = name.charAt(1);
+    let rank, suit = '';
+
+    switch (rankChar) {
+      case 'A': rank = 'ace'; break;
+      case '2': rank = 'two'; break;
+      case '3': rank = 'three'; break;
+      case '4': rank = 'four'; break;
+      case '5': rank = 'five'; break;
+      case '6': rank = 'six'; break;
+      case '7': rank = 'seven'; break;
+      case '8': rank = 'eight'; break;
+      case '9': rank = 'nine'; break;
+      case 'T': rank = 'ten'; break;
+      case 'J': rank = 'jack'; break;
+      case 'Q': rank = 'queen'; break;
+      case 'K': rank = 'king'; break;
+      default: rank = ''; break;
+    }
+
+    switch (suitChar) {
+      case 'H': suit = 'hearts'; break;
+      case 'D': suit = 'diamonds'; break;
+      case 'C': suit = 'clubs'; break;
+      case 'S': suit = 'spades'; break;
+    }
+
+    return [rank as Rank, suit as Suit];
+    }
   /**
    * Gets the CardName from the rank and suit.
    * @param rank - The rank of the card.
@@ -279,8 +298,3 @@ export default class Card extends Phaser.GameObjects.Image {
     return `${capRank} of ${capSuit}`;
   }
 }
-
-Phaser.GameObjects.GameObjectFactory.register('card', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number)
-{
-    return this.displayList.add(new Card(this.scene, x, y));
-});

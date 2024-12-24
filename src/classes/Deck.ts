@@ -70,7 +70,7 @@ export default class Deck {
     // Generate deck contents in order, so that the deck is always the same
     for (const suit of suits) {
       for (const rank of ranks) {
-        const card = new Card(gameScene, 0, 0, suit, rank);
+        const card = new Card(suit, rank);
         cardArray.push(card);
       }
     }
