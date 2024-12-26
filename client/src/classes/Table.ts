@@ -1,3 +1,149 @@
+import Phaser from 'phaser';
+import Hand from './Hand';
+import Deck from "./Deck";
+import Game from './Game';
+
+interface Player {
+    [key: string]: any;
+    playerName: string;
+    chips: number;
+    folded: boolean;
+    allIn: boolean;
+    talked: boolean;
+    table: Table;
+    cards: string[];
+    hand?: Hand;
+    GetChips(cash: number): void;
+    Check(): void;
+    Fold(): void;
+    Bet(bet: number): void;
+    Call(): void;
+    AllIn(): void;
+}
+
+export default class Table {
+    smallBlind: number;
+    bigBlind: number;
+    minPlayers: number;
+    maxPlayers: number;
+    players: { [key: string]: Player };
+    dealer: number;
+    minBuyIn: number;
+    maxBuyIn: number;
+    playersToRemove: Player[];
+    playersToAdd: Player[];
+    eventEmitter: Phaser.Events.EventEmitter;
+    currentPlayerIndex: number;
+    turnBet: any;
+    game: Game;
+    gameWinners: any[];
+    gameLosers: any[];
+    deck: Deck;
+    context: Phaser.Scene;
+
+    constructor(
+        context: Phaser.Scene,
+        smallBlind: number = 5,
+        bigBlind: number = 10,
+        minPlayers: number = 2,
+        maxPlayers: number = 6,
+        minBuyIn: number = 100,
+        maxBuyIn: number = 2000
+
+    ) {
+        this.smallBlind = smallBlind;
+        this.bigBlind = bigBlind;
+        this.minPlayers = minPlayers;
+        this.maxPlayers = maxPlayers;
+        this.players = [];
+        this.dealer = 0; //Track the dealer position between games
+        this.minBuyIn = minBuyIn;
+        this.maxBuyIn = maxBuyIn;
+        this.playersToRemove = [];
+        this.playersToAdd = [];
+        this.eventEmitter = new Phaser.Events.EventEmitter;
+        this.turnBet = {};
+        this.gameWinners = [];
+        this.gameLosers = [];
+        this.context = context;
+
+
+        //Validate acceptable value ranges.
+        let err: Error | undefined;
+        if (minPlayers < 2) { //require at least two players to start a game.
+            err = new Error('Parameter [minPlayers] must be a positive integer of a minimum value of 2.');
+        } else if (maxPlayers > 10) { //hard limit of 10 players at a table.
+            err = new Error('Parameter [maxPlayers] must be a positive integer less than or equal to 10.');
+        } else if (minPlayers > maxPlayers) { //Without this we can never start a game!
+            err = new Error('Parameter [minPlayers] must be less than or equal to [maxPlayers].');
+        }
+
+        if (err) {
+            throw err;
+        }
+    }
+
+}
+
+Table.prototype.StartGame = function () {
+    //If there is no current game and we have enough players, start a new game.
+    if (!this.game) {
+        this.game = new Game(this.context, this.smallBlind, this.bigBlind, this.players);
+        this.NewRound();
+    }
+};
+
+Table.prototype.NewRound = function() {
+    // Add players in waiting list
+    let removeIndex: number = 0;
+    for(let i: string in this.playersToAdd ){
+        if( removeIndex < this.playersToRemove.length ){
+            let index: Player = this.playersToRemove[ removeIndex ];
+            this.players[ index ] = this.playersToAdd[ i ];
+            removeIndex += 1;
+        }else{
+            this.players.push( this.playersToAdd[i] );
+        }
+    }
+    this.playersToRemove = [];
+    this.playersToAdd = [];
+    this.gameWinners = [];
+    this.gameLosers = [];
+
+
+    var i, smallBlind, bigBlind;
+    //Deal 2 cards to each player
+    for (i = 0; i < this.players.length; i += 1) {
+        this.players[i].cards.push(this.game.deck.pop());
+        this.players[i].cards.push(this.game.deck.pop());
+        this.game.bets[i] = 0;
+        this.game.roundBets[i] = 0;
+    }
+    //Identify Small and Big Blind player indexes
+    smallBlind = this.dealer + 1;
+    if (smallBlind >= this.players.length) {
+        smallBlind = 0;
+    }
+    bigBlind = this.dealer + 2;
+    if (bigBlind >= this.players.length) {
+        bigBlind -= this.players.length;
+    }
+    //Force Blind Bets
+    this.players[smallBlind].chips -= this.smallBlind;
+    this.players[bigBlind].chips -= this.bigBlind;
+    this.game.bets[smallBlind] = this.smallBlind;
+    this.game.bets[bigBlind] = this.bigBlind;
+
+    // get currentPlayer
+    this.currentPlayer = this.dealer + 3;
+    if( this.currentPlayer >= this.players.length ) {
+        this.currentPlayer -= this.players.length;
+    }
+
+    this.eventEmitter.emit( "newRound" );
+};
+
+/*
 import Player from "./Player";
 import Deck from './Deck';
 import Card from "./Card";
@@ -6,7 +152,7 @@ import Phaser, { Scene } from 'phaser';
 import * as funcs from '../utils/functions';
 import * as CONSTS from '../utils/constants';
 import { GameConfig, Board, GameState, PlayerAction } from '../utils/types';
-import { Game } from '../scenes/Game';
+import { PokerGame } from '../scenes/PokerGame';
 
 const c = CONSTS;
 
@@ -492,4 +638,4 @@ getValidActions(player: Player): PlayerAction[] {
   
   return actions;
 }
-}
+}*/

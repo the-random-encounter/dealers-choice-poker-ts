@@ -3,6 +3,37 @@ import Hand from './Hand';
 import Top from './Top';
 import Table from './Table';
 
+export default class Player {
+  username: string;
+  userID: number;
+  displayName: string;
+  chips: number;
+  folded: boolean;
+  allIn: boolean;
+  talked: boolean;
+  table: Table;
+  cards: Hand;
+
+  constructor(playerName: string, chips = 0, table: Table)
+  {
+    this.username = playerName;
+    this.userID = this.generateNewUserID();
+    this.displayName = playerName;
+    this.chips = chips;
+    this.folded = false;
+    this.allIn = false;
+    this.talked = false;
+    this.table = table; //Circular reference to allow reference back to parent object.
+    this.cards = new Hand([]);
+  }
+
+  private generateNewUserID(): number {
+    return Math.floor(Math.random() * 1000000);
+  }
+
+}
+
+/*
 export default class Player extends Top {
 
   userID: integer;
@@ -75,4 +106,4 @@ export default class Player extends Top {
     return true;
   }
 
-}
+}*/

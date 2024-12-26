@@ -2,7 +2,7 @@ import * as CONSTS from './utils/constants';
 
 import { Debug } from './scenes/Debug';
 import { Boot } from './scenes/Boot';
-import { Game as MainGame } from './scenes/Game';
+import { PokerGame } from './scenes/PokerGame';
 import { GameOver } from './scenes/GameOver';
 import { MainMenu } from './scenes/MainMenu';
 import { Preloader } from './scenes/Preloader';
@@ -39,7 +39,7 @@ const config: Types.Core.GameConfig = {
         Preloader,
         MainMenu,
         Debug,
-        MainGame,
+        PokerGame,
         GameOver
     ]
 };
