@@ -1,8 +1,9 @@
 import Table from "./Table";
 import Deck from "./Deck";
 import Player from './Player';
+import Sidepot from './Sidepot';
 
-export default class Game {
+export default class Round {
     smallBlind: number;
     bigBlind: number;
     pot: number;
@@ -15,8 +16,9 @@ export default class Game {
     players: Player[];
     currentPlayerIndex: number;
     table: Table;
+    sidepots: Sidepot[] = [];
 
-    constructor(context: Phaser.Scene, smallBlind: number, bigBlind: number, players: Player[]) {
+    constructor(context: Phaser.Scene, table, smallBlind: number, bigBlind: number, players: Player[]) {
         this.smallBlind = smallBlind;
         this.bigBlind = bigBlind;
         this.pot = 0;
@@ -27,7 +29,7 @@ export default class Game {
         this.board = [];
         this.deck = new Deck(context, true);
         this.players = players;
-        this.table = context.table;
+        this.table = table;
     }
 
     getMaxBet(bets: number[]) {
@@ -44,11 +46,11 @@ export default class Game {
     checkForEndOfRound(table: Table) {
         let maxBet: number, endOfRound: boolean;
         endOfRound = true;
-        maxBet = this.getMaxBet(table.game.bets);
+        maxBet = this.getMaxBet(this.bets);
         //For each player, check
-        for (let i = 0; i < this.players.length; i += 1) {
+        for (let i = 0; i < (this.players as Player[]).length; i += 1) {
             if (!this.players[i].folded) {
-                if (!this.players[i].talked || table.game.bets[i] !== maxBet) {
+                if (!this.players[i].talked || table.currentRound.bets[i] !== maxBet) {
                     if (!this.players[i].allIn) {
                         this.currentPlayerIndex = i;
                         endOfRound = false;
@@ -73,18 +75,18 @@ export default class Game {
     checkForWinner(table: Table) {
         let maxRank = 0.000;
         let winners: number[] = [];
-        let part: number = 0;
+        let part: number;
         let prize: number = 0;
         let allInPlayer: number[] = this.checkForAllInPlayer(winners);
         let minBets, roundEnd;
 
         //Identify winner(s)
-        for (let k = 0; k < this.players.length; k += 1) {
-            if (this.players[k].hand!.rank === maxRank && !this.players[k].folded) {
+        for (let k = 0; k < (this.players as Player[]).length; k += 1) {
+            if (this.players[k].cards!.rank === maxRank && !this.players[k].folded) {
                 winners.push(k);
             }
-            if (this.players[k].hand!.rank > maxRank && !this.players[k].folded) {
-                maxRank = this.players[k].hand!.rank;
+            if (this.players[k].cards!.rank > maxRank && !this.players[k].folded) {
+                maxRank = this.players[k].cards!.rank;
                 winners.splice(0, winners.length);
                 winners.push(k);
             }
@@ -92,46 +94,46 @@ export default class Game {
 
 
         if (allInPlayer.length > 0) {
-            minBets = table.game.roundBets[winners[0]];
+            minBets = table.currentRound.roundBets[winners[0]];
             for (let j = 1; j < allInPlayer.length; j += 1) {
-                if (table.game.roundBets[winners[j]] !== 0 && table.game.roundBets[winners[j]] < minBets) {
-                    minBets = table.game.roundBets[winners[j]];
+                if (table.currentRound.roundBets[winners[j]] !== 0 && table.currentRound.roundBets[winners[j]] < minBets) {
+                    minBets = table.currentRound.roundBets[winners[j]];
                 }
             }
             part = parseInt(minBets, 10);
         } else {
-            part = parseInt(table.game.roundBets[winners[0]], 10);
+            part = parseInt(String(table.currentRound.roundBets[winners[0]]), 10);
 
         }
-        for (let l = 0; l < table.game.roundBets.length; l += 1) {
-            if (table.game.roundBets[l] > part) {
+        for (let l = 0; l < table.currentRound.roundBets.length; l += 1) {
+            if (table.currentRound.roundBets[l] > part) {
                 prize += part;
-                table.game.roundBets[l] -= part;
+                table.currentRound.roundBets[l] -= part;
             } else {
-                prize += table.game.roundBets[l];
-                table.game.roundBets[l] = 0;
+                prize += table.currentRound.roundBets[l];
+                table.currentRound.roundBets[l] = 0;
             }
         }
 
         for (let i = 0; i < winners.length; i += 1) {
-            let winnerPrize = prize / winners.length;
-            let winningPlayer = this.players[winners[i]];
+            let winnerPrize: number = prize / winners.length;
+            let winningPlayer: Player = this.players[winners[i]];
             winningPlayer.chips += winnerPrize;
-            if (this.game.roundBets[winners[i]] === 0) {
+            if (this.roundBets[winners[i]] === 0) {
                 winningPlayer.folded = true;
-                this.gameWinners.push( {
-                    playerName: winningPlayer.playerName,
+                table.currentRoundWinners.push( {
+                    playerName: winningPlayer.username,
                     amount: winnerPrize,
-                    hand: winningPlayer.hand,
+                    hand: winningPlayer.cards,
                     chips: winningPlayer.chips
                 });
             }
-            console.log('player ' + this.players[winners[i]].playerName + ' wins !!');
+            console.log(`player '${this.players[winners[i]].username}' wins !!`);
         }
 
         roundEnd = true;
-        for (let l = 0; l < this.game.roundBets.length; l += 1) {
-            if (this.game.roundBets[l] !== 0) {
+        for (let l = 0; l < this.roundBets.length; l += 1) {
+            if (this.roundBets[l] !== 0) {
                 roundEnd = false;
             }
         }
