@@ -27,6 +27,10 @@ export class PokerGame extends Scene {
             this.room = await this.client.joinOrCreate("my_room");
             console.log("Joined successfully!");
 
+            this.table = new Table(this);
+
+
+
         } catch (e) {
             console.error(e);
         }

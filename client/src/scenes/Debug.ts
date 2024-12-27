@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import Card from '../classes/Card';
 import Deck from '../classes/Deck';
 import Hand from '../classes/Hand';
-import { HandType, HandEvaluation } from '../utils/types';
+import { HandType, Result } from '../utils/types';
 import { evaluateHand } from '../utils/functions';
 import * as CONSTS from '../utils/constants';
 
@@ -53,9 +53,9 @@ export class Debug extends Phaser.Scene {
     }).setOrigin(0.5).setInteractive();
 
     evalButton.on('pointerdown', () => {
-      const evalResponse: HandEvaluation = evaluateHand(this.playerCards);
-      this.evaluateText = evalResponse.string;
-      console.log(`Hand: ${evalResponse.string} | ${evalResponse.value}`);
+      const evalResponse: Result = evaluateHand(this.playerCards);
+      this.evaluateText = evalResponse.message;
+      console.log(`Hand: ${evalResponse.message} | ${evalResponse.rank}`);
     });
 
     const shuffleButton = this.add.text(c.GAME_X_MID, 350, 'SHUFFLE', {

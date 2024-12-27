@@ -28,9 +28,6 @@ export default class Card {
 
   /**
    * Creates a new Card instance.
-   * @param scene - The Phaser scene to create the card in.
-   * @param x - The x-coordinate of the card.
-   * @param y - The y-coordinate of the card.
    * @param arg1 - The first argument, can be a Rank, Suit, RankValue, or CardName.
    * @param arg2 - The second argument, can be a Rank, RankValue, or Suit.
    * @throws {Error} If the arguments are invalid.
@@ -45,7 +42,7 @@ export default class Card {
     [this.rank, this.suit] = this.getRankAndSuitFromName(arg1);
     this.name = arg1;
     this.value = this.rankToValue(this.rank);
-    } else if (typeof arg1 === 'string' || typeof arg1 === 'number' && arg2 !== undefined) {
+    } else if (this.isRankAndSuit(arg1, arg2)) {
       this.assignRankAndSuit(arg1, arg2 as Rank | Suit | RankValue);
     }
   }
@@ -109,7 +106,8 @@ export default class Card {
   private getRankAndSuitFromName(name: CardName): [Rank, Suit] {
     const rankChar = name.charAt(0);
     const suitChar = name.charAt(1);
-    let rank, suit = '';
+    let rank: Rank;
+    let suit: Suit;
 
     switch (rankChar) {
       case 'A': rank = 'ace'; break;
@@ -125,7 +123,7 @@ export default class Card {
       case 'J': rank = 'jack'; break;
       case 'Q': rank = 'queen'; break;
       case 'K': rank = 'king'; break;
-      default: rank = ''; break;
+      default: throw new Error(`Invalid rank name: ${rankChar}`);
     }
 
     switch (suitChar) {
@@ -133,6 +131,7 @@ export default class Card {
       case 'D': suit = 'diamonds'; break;
       case 'C': suit = 'clubs'; break;
       case 'S': suit = 'spades'; break;
+      default: throw new Error(`Invalid suit name: ${suitChar}`);
     }
 
     return [rank as Rank, suit as Suit];

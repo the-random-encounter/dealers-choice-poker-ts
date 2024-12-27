@@ -1,9 +1,15 @@
-import { BlindType, HandType, PlayerAction } from '../utils/types';
 import Hand from './Hand';
-import Top from './Top';
 import Table from './Table';
+import { progress } from '../utils/functions';
+
+interface TurnBet {
+  action?: string;
+  playerName?: string;
+  amount?: number;
+}
 
 export default class Player {
+  sessionId: string;
   username: string;
   userID: number;
   displayName: string;
@@ -13,6 +19,7 @@ export default class Player {
   talked: boolean;
   table: Table;
   cards: Hand;
+  turnBet: TurnBet;
 
   constructor(playerName: string, chips = 0, table: Table)
   {
@@ -29,6 +36,116 @@ export default class Player {
 
   private generateNewUserID(): number {
     return Math.floor(Math.random() * 1000000);
+  }
+
+  getChips(cash) {
+    this.chips += cash;
+  };
+
+// Player actions: Check(), Fold(), Bet(bet), Call(), AllIn()
+  Check() {
+    let checkAllow = true;
+
+    for (let v = 0; v < this.table.currentRound.bets.length; v += 1) {
+      if (this.table.currentRound.bets[v] !== 0) {
+        checkAllow = false;
+      }
+    }
+    if (checkAllow) {
+      for (let i = 0; i < (this.table.players as Player[]).length; i += 1) {
+        if (this.username === this.table.players[this.username].username) {
+          this.table.currentRound.bets[i] = 0;
+          this.talked = true;
+        }
+      }
+      //Attempt to progress the game
+      this.turnBet = {action: "check", playerName: this.username}
+      progress(this.table);
+    } else {
+      console.log(`Check not allowed, replay please`);
+    }
+  };
+
+ Fold() {
+    let bet;
+    //Move any current bet into the pot
+    for (let i = 0; i < this.table.players.length; i += 1) {
+      if (this === this.table.players[i]) {
+        bet = this.table.currentRound.bets[i];
+        this.table.currentRound.bets[i] = 0;
+        this.table.currentRound.pot += bet;
+        this.talked = true;
+      }
+    }
+    //Mark the player as folded
+    this.folded = true;
+    this.turnBet = {action: "fold", playerName: this.username}
+
+    //Attempt to progress the game
+    progress(this.table);
+  };
+
+  Bet(bet) {
+
+    if (this.chips > bet) {
+      for (let i = 0; i < this.table.players.length; i += 1) {
+        if (this === this.table.players[i]) {
+          this.table.currentRound.bets[i] += bet;
+          this.table.players[i].chips -= bet;
+          this.talked = true;
+        }
+      }
+
+      //Attempt to progress the game
+      this.turnBet = {action: "bet", playerName: this.username, amount: bet}
+      progress(this.table);
+    } else {
+      console.log(`You don't have enough chips --> ALL IN !!!`);
+      this.AllIn();
+    }
+  };
+
+  Call() {
+    let maxBet = this.table.currentRound.getMaxBet(this.table.currentRound.bets);
+    if (this.chips > maxBet) {
+      //Match the highest bet
+      for (let i = 0; i < this.table.players.length; i += 1) {
+        if (this === this.table.players[i]) {
+          if (this.table.currentRound.bets[i] >= 0) {
+            this.chips += this.table.currentRound.bets[i];
+          }
+          this.chips -= maxBet;
+          this.table.currentRound.bets[i] = maxBet;
+          this.talked = true;
+        }
+      }
+      //Attempt to progress the game
+      this.turnBet = {action: "call", playerName: this.username, amount: maxBet}
+      progress(this.table);
+    } else {
+      console.log(`You don't have enough chips --> ALL IN !!!`);
+      this.AllIn();
+    }
+  };
+
+  AllIn() {
+    let allInValue: number = 0;
+    for (let i = 0; i < this.table.players.length; i += 1) {
+      if (this === this.table.players[i]) {
+        if (this.table.players[i].chips !== 0) {
+          allInValue = this.table.players[i].chips;
+          this.table.currentRound.bets[i] += this.table.players[i].chips;
+          this.table.players[i].chips = 0;
+
+          this.allIn = true;
+          this.talked = true;
+        }
+      }
+    }
+
+    //Attempt to progress the game
+    this.turnBet = {action: "allin", playerName: this.username, amount: allInValue}
+    progress(this.table);
   }
 
 }

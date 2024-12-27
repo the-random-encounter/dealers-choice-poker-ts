@@ -1,4 +1,4 @@
-import { Suit, Rank, RankCapitalized, CardName, RankValue, HandType, Board, HandEvaluation } from './types';
+import { Suit, Rank, RankCapitalized, CardName, RankValue, HandType, Board, Result } from './types';
 import * as CONSTS from './constants';
 import Card from '../classes/Card';
 import Hand from '../classes/Hand';
@@ -90,7 +90,7 @@ export function valueToRank(value: RankValue, capitalize = false): Rank | RankCa
     }
   }
 
-export function evaluateHand(hand: Hand): HandEvaluation {
+export function evaluateHand(hand: Hand): Result {
   
   const handCards = hand.cards;
   // Histogram
@@ -108,8 +108,8 @@ export function evaluateHand(hand: Hand): HandEvaluation {
   // Scored histogram
   // Descending by count
   // [ [ rank, count ] ]
-  // scoredHistogram[x][0] references the rank of the cards (Jacks, Aces, etc)
-  // scoredHistogram[x][1] refernces the number of times that rank appears in a hand
+  // scoredHistogram[x][0] references the rank of the cards (Jacks, Aces, etc.)
+  // scoredHistogram[x][1] references the number of times that rank appears in a hand
 
   const scoredHistogram = Object
     .keys(histogram)
@@ -146,13 +146,13 @@ export function evaluateHand(hand: Hand): HandEvaluation {
   // Starting with Royal Flush and working downwards
   // Using ternary operators to chain evaluations together
 
-  let bestHandObject: HandEvaluation = {
-    string: '',
-    value: 0
+  const bestHandObject: Result = {
+    rank: 0,
+    message: ''
   }
 
 
-  bestHandObject.value =
+  bestHandObject.rank =
 
     (isStraight && isFlush && rankedHand[4] === 14 && !isWheel)   ? (10)
   : (isStraight && isFlush)                                       ? (9   + (rankedHand[0] / 100)) 
@@ -166,7 +166,7 @@ export function evaluateHand(hand: Hand): HandEvaluation {
   :                                                                 (1   + ((scoredHistogram[0][0] ?? 0) / 100));
 
 
-  bestHandObject.string = bestHandValueToString(bestHandObject.value, scoredHistogram as Array<Array<RankValue | number>>, rankedHand, handCards, isWheel, isStraight, isFlush);
+  bestHandObject.message = bestHandValueToString(bestHandObject.rank, scoredHistogram as Array<Array<RankValue | number>>, rankedHand, handCards, isWheel);
   return bestHandObject;
 }
 
@@ -181,7 +181,7 @@ export function* iterateBoard(board: Board): IterableIterator<Card[]> {
   yield   board.rivers;
 }
 
-function bestHandValueToString(value: number, scoredHistogram: Array<Array<RankValue | number>>, rankedHand: RankValue[], handCards: Array<Card>, isWheel: boolean, isStraight: boolean, isFlush: boolean): string {
+function bestHandValueToString(value: number, scoredHistogram: Array<Array<RankValue | number>>, rankedHand: RankValue[], handCards: Array<Card>, isWheel: boolean): string {
   if      (value >= 10) return `Royal Flush`;
   else if (value >= 9)  return `Straight Flush${isWheel ? ` (Wheel, ${capitalize(handCards[0].suit)})` : ` (${rankedHand[0]} - ${rankedHand[4]}, ${capitalize(handCards[0].suit)})`}`
   else if (value >= 8)  return `Four of a Kind (${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))}'s)`;
@@ -193,4 +193,118 @@ function bestHandValueToString(value: number, scoredHistogram: Array<Array<RankV
   else if (value >= 2)  return `Pair of ${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))}'s`;
   else                  return `High Card (${capitalize(valueToRank(scoredHistogram[0][0] as RankValue))})`;
   
+}
+
+export function sortNumber(a, b) {
+  return b - a;
+}
+
+export function rankKickers(ranks, noOfCards) {
+  let kickerRank: number = 0.0000;
+  let myRanks: any[] = [];
+  let rank: string = '';
+  let i;
+
+  for (i = 0; i <= ranks.length; i += 1) {
+    rank = ranks.substr(i, 1);
+
+    if (rank === 'A') {myRanks.push(0.2048); }
+    if (rank === 'K') {myRanks.push(0.1024); }
+    if (rank === 'Q') {myRanks.push(0.0512); }
+    if (rank === 'J') {myRanks.push(0.0256); }
+    if (rank === 'T') {myRanks.push(0.0128); }
+    if (rank === '9') {myRanks.push(0.0064); }
+    if (rank === '8') {myRanks.push(0.0032); }
+    if (rank === '7') {myRanks.push(0.0016); }
+    if (rank === '6') {myRanks.push(0.0008); }
+    if (rank === '5') {myRanks.push(0.0004); }
+    if (rank === '4') {myRanks.push(0.0002); }
+    if (rank === '3') {myRanks.push(0.0001); }
+    if (rank === '2') {myRanks.push(0.0000); }
+  }
+
+  myRanks.sort(sortNumber);
+
+  for (i = 0; i < noOfCards; i += 1) {
+    kickerRank += myRanks[i];
+  }
+
+  return kickerRank;
+}
+
+export function rankHand(hand) {
+  let myResult = evaluateHand(hand);
+  hand.rank = myResult.rank;
+  hand.message = myResult.message;
+
+  return hand;
+}
+
+export function progress(table) {
+  let i;
+  table.eventEmitter.emit( "turn" );
+  let cards, hand;
+  if (table.game) {
+    if (table.game.checkForEndOfRound(table)) {
+      table.currentPlayer = (table.currentPlayer >= table.players.length-1) ? (table.currentPlayer-table.players.length+1) : (table.currentPlayer + 1 );
+      //Move all bets to the pot
+      for (i = 0; i < table.game.bets.length; i += 1) {
+        table.game.pot += parseInt(table.game.bets[i], 10);
+        table.game.roundBets[i] += parseInt(table.game.bets[i], 10);
+      }
+      if (table.game.roundName === 'River') {
+        table.game.roundName = 'Showdown';
+        table.game.bets.splice(0, table.game.bets.length);
+        //Evaluate each hand
+        for (let j = 0; j < table.players.length; j += 1) {
+          cards = table.players[j].cards.concat(table.game.board);
+          hand = new Hand(cards);
+          table.players[j].hand = rankHand(hand);
+        }
+        table.game.checkForWinner(table);
+        table.game.checkForBankrupt(table);
+        table.eventEmitter.emit( "gameOver" );
+      } else if (table.game.roundName === 'Turn') {
+        console.log('effective turn');
+        table.game.roundName = 'River';
+        table.game.deck.pop(); //Burn a card
+        table.game.board.push(table.game.deck.pop()); //Turn a card
+        //table.game.bets.splice(0,table.game.bets.length-1);
+        for (i = 0; i < table.game.bets.length; i += 1) {
+          table.game.bets[i] = 0;
+        }
+        for (i = 0; i < table.players.length; i += 1) {
+          table.players[i].talked = false;
+        }
+        table.eventEmitter.emit( "deal" );
+      } else if (table.game.roundName === 'Flop') {
+        console.log('effective flop');
+        table.game.roundName = 'Turn';
+        table.game.deck.pop(); //Burn a card
+        table.game.board.push(table.game.deck.pop()); //Turn a card
+        for (i = 0; i < table.game.bets.length; i += 1) {
+          table.game.bets[i] = 0;
+        }
+        for (i = 0; i < table.players.length; i += 1) {
+          table.players[i].talked = false;
+        }
+        table.eventEmitter.emit( "deal" );
+      } else if (table.game.roundName === 'Deal') {
+        console.log('effective deal');
+        table.game.roundName = 'Flop';
+        table.game.deck.pop(); //Burn a card
+        for (i = 0; i < 3; i += 1) { //Turn three cards
+          table.game.board.push(table.game.deck.pop());
+        }
+        //table.game.bets.splice(0,table.game.bets.length-1);
+        for (i = 0; i < table.game.bets.length; i += 1) {
+          table.game.bets[i] = 0;
+        }
+        for (i = 0; i < table.players.length; i += 1) {
+          table.players[i].talked = false;
+        }
+        table.eventEmitter.emit( "deal" );
+      }
+    }
+  }
 }

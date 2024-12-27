@@ -1,43 +1,24 @@
 import Phaser from 'phaser';
-import Hand from './Hand';
 import Deck from "./Deck";
-import Game from './Game';
-
-interface Player {
-    [key: string]: any;
-    playerName: string;
-    chips: number;
-    folded: boolean;
-    allIn: boolean;
-    talked: boolean;
-    table: Table;
-    cards: string[];
-    hand?: Hand;
-    GetChips(cash: number): void;
-    Check(): void;
-    Fold(): void;
-    Bet(bet: number): void;
-    Call(): void;
-    AllIn(): void;
-}
+import Round from './Round';
+import Player from './Player';
 
 export default class Table {
     smallBlind: number;
     bigBlind: number;
     minPlayers: number;
     maxPlayers: number;
-    players: { [key: string]: Player };
+    players: Player[];
     dealer: number;
     minBuyIn: number;
     maxBuyIn: number;
     playersToRemove: Player[];
     playersToAdd: Player[];
     eventEmitter: Phaser.Events.EventEmitter;
-    currentPlayerIndex: number;
     turnBet: any;
-    game: Game;
-    gameWinners: any[];
-    gameLosers: any[];
+    currentRound: Round;
+    currentRoundWinners: any[];
+    currentRoundLosers: any[];
     deck: Deck;
     context: Phaser.Scene;
 
@@ -49,7 +30,6 @@ export default class Table {
         maxPlayers: number = 6,
         minBuyIn: number = 100,
         maxBuyIn: number = 2000
-
     ) {
         this.smallBlind = smallBlind;
         this.bigBlind = bigBlind;
@@ -63,14 +43,14 @@ export default class Table {
         this.playersToAdd = [];
         this.eventEmitter = new Phaser.Events.EventEmitter;
         this.turnBet = {};
-        this.gameWinners = [];
-        this.gameLosers = [];
+        this.currentRoundWinners = [];
+        this.currentRoundLosers = [];
         this.context = context;
 
 
         //Validate acceptable value ranges.
         let err: Error | undefined;
-        if (minPlayers < 2) { //require at least two players to start a game.
+        if (minPlayers < 2) { //require at least two players to start a currentRound.
             err = new Error('Parameter [minPlayers] must be a positive integer of a minimum value of 2.');
         } else if (maxPlayers > 10) { //hard limit of 10 players at a table.
             err = new Error('Parameter [maxPlayers] must be a positive integer less than or equal to 10.');
@@ -83,65 +63,13 @@ export default class Table {
         }
     }
 
+    addPlayer(player) {
+        if (!this.players.includes(player))
+            this.players.push(player);
+        else
+            throw new Error(`Player ${player.username} is already at the table.`);
+    }
 }
-
-Table.prototype.StartGame = function () {
-    //If there is no current game and we have enough players, start a new game.
-    if (!this.game) {
-        this.game = new Game(this.context, this.smallBlind, this.bigBlind, this.players);
-        this.NewRound();
-    }
-};
-
-Table.prototype.NewRound = function() {
-    // Add players in waiting list
-    let removeIndex: number = 0;
-    for(let i: string in this.playersToAdd ){
-        if( removeIndex < this.playersToRemove.length ){
-            let index: Player = this.playersToRemove[ removeIndex ];
-            this.players[ index ] = this.playersToAdd[ i ];
-            removeIndex += 1;
-        }else{
-            this.players.push( this.playersToAdd[i] );
-        }
-    }
-    this.playersToRemove = [];
-    this.playersToAdd = [];
-    this.gameWinners = [];
-    this.gameLosers = [];
-
-
-    var i, smallBlind, bigBlind;
-    //Deal 2 cards to each player
-    for (i = 0; i < this.players.length; i += 1) {
-        this.players[i].cards.push(this.game.deck.pop());
-        this.players[i].cards.push(this.game.deck.pop());
-        this.game.bets[i] = 0;
-        this.game.roundBets[i] = 0;
-    }
-    //Identify Small and Big Blind player indexes
-    smallBlind = this.dealer + 1;
-    if (smallBlind >= this.players.length) {
-        smallBlind = 0;
-    }
-    bigBlind = this.dealer + 2;
-    if (bigBlind >= this.players.length) {
-        bigBlind -= this.players.length;
-    }
-    //Force Blind Bets
-    this.players[smallBlind].chips -= this.smallBlind;
-    this.players[bigBlind].chips -= this.bigBlind;
-    this.game.bets[smallBlind] = this.smallBlind;
-    this.game.bets[bigBlind] = this.bigBlind;
-
-    // get currentPlayer
-    this.currentPlayer = this.dealer + 3;
-    if( this.currentPlayer >= this.players.length ) {
-        this.currentPlayer -= this.players.length;
-    }
-
-    this.eventEmitter.emit( "newRound" );
-};
 
 /*
 import Player from "./Player";
@@ -189,9 +117,9 @@ export default class Table {
     console.log(`New table created!`);
     this.tableName = tableName;
     this.tableID = this.generateTableID();
-    this.gameConfig = config;
-    this.gameScene = gameScene;
-    this.deck = new Deck(this.gameScene, true);
+    this.currentRoundConfig = config;
+    this.currentRoundScene = gameScene;
+    this.deck = new Deck(this.currentRoundScene, true);
     this.smallBlindAmount = smallBlindAmount;
     this.bigBlindAmount = bigBlingAmount;
 
@@ -249,7 +177,7 @@ export default class Table {
     let dealOrder: Array<Array<Player | string>> = [];
     
     let playerCards: Player[] = [];
-    for (let i = 0; i < this.gameConfig.cardsPerPlayer; i++) {
+    for (let i = 0; i < this.currentRoundConfig.cardsPerPlayer; i++) {
       for (let i = this.dealerToken; playerCards.length <= this.players.length; i++) {
         if (i === this.players.length)
           i = 0;
@@ -261,18 +189,18 @@ export default class Table {
     dealOrder.push(playerCards);
     dealOrder.push(['burn']);
 
-    for (let i = 0; i < this.gameConfig.numberOfFlops; i++) {
+    for (let i = 0; i < this.currentRoundConfig.numberOfFlops; i++) {
       dealOrder.push(['flop']);
       dealOrder.push(['burn']);
     }
 
 
-    for (let i = 0; i < this.gameConfig.numberOfTurns; i++) {
+    for (let i = 0; i < this.currentRoundConfig.numberOfTurns; i++) {
       dealOrder.push(['turn']);
       dealOrder.push(['burn']);
     }
 
-    for (let i = 0; i < this.gameConfig.numberOfRivers; i++) {
+    for (let i = 0; i < this.currentRoundConfig.numberOfRivers; i++) {
       dealOrder.push(['river']);
     }
   }
@@ -282,7 +210,7 @@ export default class Table {
     if (nextDeal) {
       if (nextDeal[0] === 'burn') {
         this.burnPile.push(this.deck.draw());
-        const burnImg = this.gameScene.add.image(c.GAME_WIDTH - 200 + (Math.random() * 20 - 10), c.GAME_HEIGHT - 100 + (Math.random() * 20 - 10), 'cardback').setOrigin(0.5);
+        const burnImg = this.currentRoundScene.add.image(c.currentRound_WIDTH - 200 + (Math.random() * 20 - 10), c.currentRound_HEIGHT - 100 + (Math.random() * 20 - 10), 'cardback').setOrigin(0.5);
       }
 
       else if (nextDeal[0] === 'flop') {
@@ -304,9 +232,9 @@ export default class Table {
   }
   dealCards(gameScene: Scene): void {
     // Reset and shuffle deck
-    switch (this.gameState) {
+    switch (this.currentRoundState) {
       case GameState.IDLE:
-        this.deck = new Deck(this.gameScene, true);
+        this.deck = new Deck(this.currentRoundScene, true);
         this.burnPile = [];
         break;
       case GameState.DEALING:
@@ -332,7 +260,7 @@ export default class Table {
 
   dealPlayerCards(deck: Deck, gameScene: Scene): void {
     
-    for (let i = 0; i < this.gameConfig.cardsPerPlayer; i++) {
+    for (let i = 0; i < this.currentRoundConfig.cardsPerPlayer; i++) {
       let cardList: Card[] = [];
       for (let j = this.dealerToken; j < this.players.length; j++) {
         if (j === this.players.length)
@@ -346,12 +274,12 @@ export default class Table {
         cardList.push(card);
         player.currentHand.addCard(card);
       }
-      //this.dealingAnim(gameScene, cardList, { x: c.GAME_X_MID, y: c.GAME_Y_3F })
+      //this.dealingAnim(gameScene, cardList, { x: c.currentRound_X_MID, y: c.currentRound_Y_3F })
     }
   }
 
   dealFlop(): void {
-    for (let i = 0; i < this.gameConfig.numberOfFlops; i++) {
+    for (let i = 0; i < this.currentRoundConfig.numberOfFlops; i++) {
       const flop: Card[] = [];
       for (let j = 0; j < 3; j++)
         flop.push(this.deck.draw());
@@ -360,12 +288,12 @@ export default class Table {
   }
 
   dealTurn(): void {
-    for (let i = 0; i < this.gameConfig.numberOfTurns; i++)
+    for (let i = 0; i < this.currentRoundConfig.numberOfTurns; i++)
       this.board.turns.push(this.deck.draw());
   }
 
   dealRiver(): void {
-    for (let i = 0; i < this.gameConfig.numberOfRivers; i++)
+    for (let i = 0; i < this.currentRoundConfig.numberOfRivers; i++)
       this.board.rivers.push(this.deck.draw());
   }
 
@@ -414,7 +342,7 @@ export default class Table {
     const validActions = this.getValidActions(currentPlayer);
     
     // Emit event for UI to update available actions
-    (this.gameScene as Game).events.emit('updatePlayerActions', validActions);
+    (this.currentRoundScene as Game).events.emit('updatePlayerActions', validActions);
   }
 
   isBettingComplete(): boolean {
@@ -431,21 +359,21 @@ export default class Table {
   }
 
   moveToNextPhase(): void {
-    switch (this.gameState) {
+    switch (this.currentRoundState) {
       case GameState.PREFLOP:
-        this.gameState = GameState.FLOP;
+        this.currentRoundState = GameState.FLOP;
         this.dealFlop();
         break;
       case GameState.FLOP:
-        this.gameState = GameState.TURN;
+        this.currentRoundState = GameState.TURN;
         this.dealTurn();
         break;
       case GameState.TURN:
-        this.gameState = GameState.RIVER;
+        this.currentRoundState = GameState.RIVER;
         this.dealRiver();
         break;
       case GameState.RIVER:
-        this.gameState = GameState.SHOWDOWN;
+        this.currentRoundState = GameState.SHOWDOWN;
         this.determineWinner();
         break;
     }
@@ -453,7 +381,7 @@ export default class Table {
   }
 
   getGameState(): GameState {
-    return this.gameState;
+    return this.currentRoundState;
   }
 
   private resetBets(): void {
@@ -552,22 +480,22 @@ export default class Table {
 
 startNewHand(): void {
   // Reset everything
-  this.gameState = GameState.DEALING;
+  this.currentRoundState = GameState.DEALING;
   this.clearTable();
-  this.deck = new Deck(this.gameScene, true);
+  this.deck = new Deck(this.currentRoundScene, true);
   this.pot = 0;
   this.currentBet = 0;
   this.burnPile = [];
   
   // Deal cards to players
-  this.dealPlayerCards(this.deck, this.gameScene);
+  this.dealPlayerCards(this.deck, this.currentRoundScene);
   
   // Post blinds
   this.players[this.smallBlindToken].postBlind('small');
   this.players[this.bigBlindToken].postBlind('big');
   
   // Set initial betting round
-  this.gameState = GameState.PREFLOP;
+  this.currentRoundState = GameState.PREFLOP;
   this.activePlayerIndex = (this.bigBlindToken + 1) % this.players.length;
 }
 
@@ -578,34 +506,34 @@ advanceGameState(): void {
     p.hasRaised = false;
   });
 
-  switch (this.gameState) {
+  switch (this.currentRoundState) {
     case GameState.PREFLOP:
-      this.gameState = GameState.FLOP;
+      this.currentRoundState = GameState.FLOP;
       this.dealBurn();
       this.dealFlop();
       break;
     case GameState.FLOP:
-      this.gameState = GameState.TURN;
+      this.currentRoundState = GameState.TURN;
       this.dealBurn();
       this.dealTurn();
       break;
     case GameState.TURN:
-      this.gameState = GameState.RIVER;
+      this.currentRoundState = GameState.RIVER;
       this.dealBurn();
       this.dealRiver();
       break;
     case GameState.RIVER:
-      this.gameState = GameState.SHOWDOWN;
+      this.currentRoundState = GameState.SHOWDOWN;
       this.determineWinner();
       break;
     case GameState.SHOWDOWN:
-      this.gameState = GameState.IDLE;
+      this.currentRoundState = GameState.IDLE;
       this.advanceRound(); // Move dealer button and blinds
       break;
   }
 
   // Reset for next betting round
-  if (this.gameState !== GameState.SHOWDOWN && this.gameState !== GameState.IDLE) {
+  if (this.currentRoundState !== GameState.SHOWDOWN && this.currentRoundState !== GameState.IDLE) {
     this.activePlayerIndex = (this.dealerToken + 1) % this.players.length;
     this.currentBet = 0;
   }
