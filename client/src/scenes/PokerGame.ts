@@ -16,6 +16,11 @@ const c = CONSTS;
 
 export class PokerGame extends Scene {
 
+    constructor ()
+    {
+        super('PokerGame');
+    }
+
     client = new Client("ws://localhost:2567");
     room: Room;
     table: Table;
