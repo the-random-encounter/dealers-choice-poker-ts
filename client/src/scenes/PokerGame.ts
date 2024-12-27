@@ -31,7 +31,7 @@ export class PokerGame extends Scene {
         try {
             this.room = await this.client.joinOrCreate("my_room");
             console.log("Joined successfully!");
-
+            const tableImg = this.add.image(c.GAME_X_MID, c.GAME_Y_MID, 'table').setOrigin(0.5);
             this.table = new Table(this);
 
 
