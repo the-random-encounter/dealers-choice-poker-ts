@@ -147,7 +147,7 @@ export default class GameManager {
     let nextIndex = (currentIndex + 1) % this.state.players.length;
     
     while (nextIndex !== currentIndex) {
-        if (!this.state.players[nextIndex].folded) {
+        if (!this.state.players[nextIndex].folded || this.state.players[nextIndex] !== null) {
             return nextIndex;
         }
         nextIndex = (nextIndex + 1) % this.state.players.length;
