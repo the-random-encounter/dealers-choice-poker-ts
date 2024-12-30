@@ -23,8 +23,7 @@ export class Debug extends Phaser.Scene {
     this.camera = this.cameras.main;
     this.camera.setBackgroundColor(0x000000);
 
-    this.deck = new Deck(this);
-    this.deck.shuffleDeck();
+    this.deck = new Deck(true);
 
     const dealButton = this.add.text(c.GAME_X_MID,450, 'DEAL', {
             fontFamily: 'Arial Black', fontSize: 72, color: '#ffffff',
@@ -92,7 +91,7 @@ export class Debug extends Phaser.Scene {
   }
 
   shuffleDebug(deck: Deck) {
-    deck.regenerateDeck(this);
+    deck.regenerateDeck();
     deck.shuffleDeck();
   }
 

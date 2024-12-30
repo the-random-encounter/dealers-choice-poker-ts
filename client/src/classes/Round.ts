@@ -27,7 +27,7 @@ export default class Round {
         this.bets = [];
         this.roundBets = [];
         this.board = [];
-        this.deck = new Deck(context, true);
+        this.deck = new Deck(true);
         this.players = players;
         this.table = table;
     }
