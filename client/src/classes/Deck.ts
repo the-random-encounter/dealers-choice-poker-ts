@@ -32,15 +32,15 @@ export default class Deck {
 
   cards: Card[];
 
-  constructor(gameScene: Phaser.Scene, autoShuffle: boolean = false) {
+  constructor(autoShuffle: boolean = false) {
     
     // Construct new deck, and shuffle if shuffle flag is set true
     if (autoShuffle === true) {
-      this.cards = this.generateDeck(gameScene);
+      this.cards = this.generateDeck();
       this.shuffleDeck();
     // If no shuffle flag is set, just generate new deck in order
     } else {
-      this.cards = this.generateDeck(gameScene);
+      this.cards = this.generateDeck();
     }
   }
 
@@ -61,7 +61,7 @@ export default class Deck {
   }
 
 
-  private generateDeck(gameScene: Phaser.Scene): Card[] {
+  private generateDeck(): Card[] {
     const suits: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
     const ranks: Rank[] = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'jack', 'queen', 'king', 'ace'];
 
@@ -77,11 +77,11 @@ export default class Deck {
     return cardArray;
   }
 
-  regenerateDeck(gameScene: Phaser.Scene): void {
+  regenerateDeck(): void {
 
     this.cards = [];
 
-    this.cards = this.generateDeck(gameScene);
+    this.cards = this.generateDeck();
   }
 
   shuffleDeck(): void {
@@ -106,4 +106,4 @@ export default class Deck {
       throw new Error('Not enough cards to draw.');
     else return this.cards.pop()!;
   }
-}console.log();console.log();
+}
