@@ -11,6 +11,12 @@ export class PlayerState extends Schema {
     @type("boolean") allIn      : boolean = false;  
     @type("boolean") isActive   : boolean = false;
     @type(["string"]) hand      : ArraySchema<string> = new ArraySchema<string>();
-    @type("string") lastAction  : string = "NONE";
+    @type("string") lastAction  : string  = "NONE";
+    @type("boolean") canCheck   : boolean = false;
+    @type("boolean") canRaise   : boolean = false;
+    @type("boolean") canFold    : boolean = false;
+    @type("boolean") canCall    : boolean = false;
+    @type("boolean") canBet     : boolean = false;
+    
 
 }

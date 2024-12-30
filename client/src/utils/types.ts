@@ -86,6 +86,16 @@ export enum GameState {
 }
 
 export type PlayerAction = 'Check' | 'Bet' | 'Call' | 'Raise' | 'Fold';
+export type LastActions = "NONE" | "CHECK" | "BET" | "CALL" | "RAISE" | "FOLD";
+
+export enum Actions {
+  NONE = 'None',
+  CHECK = 'Check',
+  BET = 'Bet',
+  CALL = 'Call',
+  RAISE = 'Raise',
+  FOLD = 'Fold'
+}
 
 export interface BetInfo {
   amount: number;

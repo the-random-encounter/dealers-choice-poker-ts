@@ -38,6 +38,7 @@ export class PokerGame extends Scene {
     minusBet: GameObjects.Text;
     submitBet: GameObjects.Text;
     resetBet: GameObjects.Text;
+    startRound: GameObjects.Text;
     gameState: any;
     currentBet: number;
     activePlayerIndex: number;
@@ -76,7 +77,8 @@ export class PokerGame extends Scene {
 
             this.room.onMessage("roundStarted", (data) => {
               // Initialize the round UI
-              this.initializeRound(data);
+              this.hideStartButton();
+              //this.initializeRound(data);
             });
           });
         } catch (e) {
@@ -164,6 +166,18 @@ export class PokerGame extends Scene {
             .setAlign('center')
             .setOrigin(0.5)
             .setVisible(false);
+
+            this.startRound = this.add.text(150, 150, "START", {
+              fontFamily: 'Arial Black', fontSize: 60, color: '#fff', stroke: '#000', strokeThickness: 2, align: 'center' })
+            .setInteractive({ useHandCursor: true})
+            .on('pointerdown', () => {
+              this.room?.send("requestStart");
+              this.startRound.setVisible(false);
+            })
+            .setAlign('center')
+            .setOrigin(0.5)
+            .setVisible(false);
+            
     }
 
     private updateButtons() {
@@ -203,6 +217,41 @@ export class PokerGame extends Scene {
     }
   }
 
+  private renderCards(): void {
+
+    const player = this.room!.state.players[this.getLocalPlayerIndex()];
+    const playerCards = player.hand;
+    const communityCards = this.communityCards;
+    
+    if (player && player.hand) {
+      let i = 100;
+      for (const card of playerCards) {
+        this.add.image(c.GAME_WIDTH - 400 + i, c.GAME_HEIGHT - 150, card.name);
+        i += 100;
+      }
+    }
+
+    if (this.room?.state.players) {
+      let j = 100;
+      let k = 0;
+      for (const player of this.room!.state.players) {
+        for (const card of player.hand) {
+          this.add.image(100 + j, 100 + k, card.name).setScale(0.75);
+          j += 100;
+        }
+        k += 150;
+      }
+    }
+
+    if (communityCards) {
+      let l = 0;
+      for (const card of communityCards) {
+        this.add.image(c.GAME_X_MID - 300 + l, c.GAME_Y_MID, card.name).setScale(0.75);
+        l += 100;
+      }
+    }
+  }
+
     updateCommunityCards(cards) {
         // Display community cards on the table
         cards.forEach((card, index) => {
@@ -231,7 +280,7 @@ export class PokerGame extends Scene {
         ) ?? -1;
     }
 
-    private getValidActions(player: PlayerState): PlayerAction[] {
+    private getValidActions(player: Player): PlayerAction[] {
         const actions: PlayerAction[] = ['Fold']; // Can always fold
         const currentBet = this.currentBet;
         const playerBet = player.bet;
@@ -266,11 +315,11 @@ export class PokerGame extends Scene {
 
         // Show only valid action buttons
         const buttonMap = {
-            'Fold': this.foldButton,
-            'Check': this.checkButton,
-            'Call': this.callButton,
-            'Bet': this.betButton,
-            'Raise': this.raiseButton
+            'Fold'  : this.foldButton,
+            'Check' : this.checkButton,
+            'Call'  : this.callButton,
+            'Bet'   : this.betButton,
+            'Raise' : this.raiseButton
         };
 
         validActions.forEach(action => {
@@ -308,5 +357,15 @@ export class PokerGame extends Scene {
                 button.disableInteractive();
             }
         });
+    }
+
+    private showStartButton(): void {
+        this.startRound.setVisible(true);
+        this.startRound.setInteractive({ useHandCursor: true });
+    }
+
+    private hideStartButton(): void {
+      this.startRound.setVisible(false);
+      this.startRound.disableInteractive();
     }
 }
