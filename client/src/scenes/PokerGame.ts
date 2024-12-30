@@ -34,6 +34,15 @@ export class PokerGame extends Scene {
     playerCards: Card[];
     communityCards: Card[];
     amountToBet: number;
+    plusBet: GameObjects.Text;
+    minusBet: GameObjects.Text;
+    submitBet: GameObjects.Text;
+    resetBet: GameObjects.Text;
+    gameState: any;
+    currentBet: number;
+    activePlayerIndex: number;
+    gameVariant: GameVariant;
+    gameConfig: GameConfig;
 
     async create() {
         console.log("Joining room...");
@@ -97,7 +106,12 @@ export class PokerGame extends Scene {
         this.betButton = this.add.text(c.GAME_WIDTH - 35, 225, 'Bet', { 
           fontFamily: 'Arial Black', fontSize: 60, color: '#fff', stroke: '#000', strokeThickness: 2, align: 'right'  })
             .setInteractive({ useHandCursor: true })
-            .on('pointerdown', () => this.sendAction('bet', { amount: 10 }))
+            .on('pointerdown', () => {
+              this.plusBet.setVisible(true);
+              this.minusBet.setVisible(true);
+              this.submitBet.setVisible(true);
+              this.resetBet.setVisible(true);
+            })
             .setAlign('right')
             .setOrigin(1.0);
 
@@ -114,6 +128,42 @@ export class PokerGame extends Scene {
             .on('pointerdown', () => this.sendAction('call'))
             .setAlign('right')
             .setOrigin(1.0);
+
+        this.plusBet = this.add.text(c.GAME_WIDTH - 150, c.GAME_Y_MID, "+", {
+          fontFamily: 'Arial Black', fontSize: 100, color: '#fff', stroke: '#000', strokeThickness: 2, align: 'center' })
+            .setInteractive({ useHandCursor: true})
+            .on('pointerdown', () => this.amountToBet += 1)
+            .on('shift+pointerdown', () => this.amountToBet += 5)
+            .on('ctrl+pointerdown', () => this.amountToBet += 10)
+            .setAlign('center')
+            .setOrigin(0.5)
+            .setVisible(false);
+
+        this.minusBet = this.add.text(c.GAME_WIDTH - 250, c.GAME_Y_MID, "-", {
+          fontFamily: 'Arial Black', fontSize: 100, color: '#fff', stroke: '#000', strokeThickness: 2, align: 'center' })
+            .setInteractive({ useHandCursor: true})
+            .on('pointerdown', () => this.amountToBet -= 1)
+            .on('shift+pointerdown', () => this.amountToBet -= 5)
+            .on('ctrl+pointerdown', () => this.amountToBet -= 10)
+            .setAlign('center')
+            .setOrigin(0.5)
+            .setVisible(false);
+
+        this.submitBet = this.add.text(c.GAME_WIDTH - 200, c.GAME_Y_MID + 100, "Submit", {
+          fontFamily: 'Arial Black', fontSize: 60, color: '#fff', stroke: '#000', strokeThickness: 2, align: 'center' })
+            .setInteractive({ useHandCursor: true})
+            .on('pointerdown', () => this.sendAction('bet', { amount: this.amountToBet }))
+            .setAlign('center')
+            .setOrigin(0.5)
+            .setVisible(false);
+
+        this.resetBet = this.add.text(c.GAME_WIDTH - 200, c.GAME_Y_MID + 200, "Reset", {
+          fontFamily: 'Arial Black', fontSize: 60, color: '#fff', stroke: '#000', strokeThickness: 2, align: 'center' })
+            .setInteractive({ useHandCursor: true})
+            .on('pointerdown', () => this.amountToBet = 0)
+            .setAlign('center')
+            .setOrigin(0.5)
+            .setVisible(false);
     }
 
     private updateButtons() {
@@ -135,10 +185,10 @@ export class PokerGame extends Scene {
 
     private updateGameState(state: any) {
     // Update local game state
-    this.table.gameState = state.currentPhase;
-    this.table.pot = state.pot;
-    this.table.currentBet = state.currentBet;
-    this.table.activePlayerIndex = state.activePlayerIndex;
+    this.gameState = state.currentPhase;
+    this.pot = state.pot;
+    this.currentBet = state.currentBet;
+    this.activePlayerIndex = state.activePlayerIndex;
 
     // Update UI
     this.updateButtons();
@@ -146,7 +196,7 @@ export class PokerGame extends Scene {
 
     // Show/hide action buttons for active player
     if (state.activePlayerIndex === this.getLocalPlayerIndex()) {
-      const validActions = this.table.getValidActions(this.table.players[state.activePlayerIndex]);
+      const validActions = this.getValidActions(this.table.players[state.activePlayerIndex]);
       this.showActionButtons(validActions);
     } else {
       this.hideActionButtons();
@@ -175,4 +225,88 @@ export class PokerGame extends Scene {
     });
   }
 
+    private getLocalPlayerIndex(): number {
+        return this.room?.state.players.findIndex(
+            p => p.id === this.room?.sessionId
+        ) ?? -1;
+    }
+
+    private getValidActions(player: PlayerState): PlayerAction[] {
+        const actions: PlayerAction[] = ['Fold']; // Can always fold
+        const currentBet = this.currentBet;
+        const playerBet = player.bet;
+        const playerChips = player.chips;
+
+        // Check if player can check (no bets to call)
+        if (currentBet === playerBet) {
+            actions.push('Check');
+        }
+
+        // Can call if there's a bet to match and player has enough chips
+        if (currentBet > playerBet && playerChips >= (currentBet - playerBet)) {
+            actions.push('Call');
+        }
+
+        // Can bet if no current bet and player has chips
+        if (currentBet === 0 && playerChips > 0) {
+            actions.push('Bet');
+        }
+
+        // Can raise if there's a current bet and player has enough chips for minimum raise
+        if (currentBet > 0 && playerChips >= (currentBet - playerBet + this.room!.state.bigBlind)) {
+            actions.push('Raise');
+        }
+
+        return actions;
+    }
+
+    private showActionButtons(validActions: PlayerAction[]): void {
+        // Hide all buttons first
+        this.hideActionButtons();
+
+        // Show only valid action buttons
+        const buttonMap = {
+            'Fold': this.foldButton,
+            'Check': this.checkButton,
+            'Call': this.callButton,
+            'Bet': this.betButton,
+            'Raise': this.raiseButton
+        };
+
+        validActions.forEach(action => {
+            const button = buttonMap[action];
+            if (button) {
+                button.setVisible(true);
+                button.setInteractive({ useHandCursor: true });
+            }
+        });
+
+        // Position buttons sequentially
+        const visibleButtons = validActions
+            .map(action => buttonMap[action])
+            .filter(button => button && button.visible);
+        
+        visibleButtons.forEach((button, index) => {
+            button.y = 75 + (index * 75); // Stack buttons vertically
+        });
+    }
+
+    private hideActionButtons(): void {
+        [
+            this.foldButton,
+            this.checkButton,
+            this.callButton,
+            this.betButton,
+            this.raiseButton,
+            this.plusBet,
+            this.minusBet,
+            this.submitBet,
+            this.resetBet
+        ].forEach(button => {
+            if (button) {
+                button.setVisible(false);
+                button.disableInteractive();
+            }
+        });
+    }
 }
