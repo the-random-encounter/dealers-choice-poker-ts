@@ -19,6 +19,7 @@ export default class Player {
   talked: boolean;
   table: Table;
   cards: Hand;
+  bet: number;
   turnBet: TurnBet;
 
   constructor(playerName: string, chips = 0, table: Table)

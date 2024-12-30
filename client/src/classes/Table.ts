@@ -21,6 +21,8 @@ export default class Table {
     currentRoundLosers: any[];
     deck: Deck;
     context: Phaser.Scene;
+    gameState: any;
+    pot: number = 0;
 
     constructor(
         context: Phaser.Scene,

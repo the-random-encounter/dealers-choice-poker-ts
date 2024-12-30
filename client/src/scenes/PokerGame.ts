@@ -24,6 +24,7 @@ export class PokerGame extends Scene {
     client = new Client("ws://localhost:2567");
     room: Room | null;
     table: Table;
+    pot: number = 0;
     foldButton: GameObjects.Text;
     checkButton: GameObjects.Text;
     betButton: GameObjects.Text;
@@ -32,6 +33,7 @@ export class PokerGame extends Scene {
     player: Player;
     playerCards: Card[];
     communityCards: Card[];
+    amountToBet: number;
 
     async create() {
         console.log("Joining room...");
@@ -53,6 +55,20 @@ export class PokerGame extends Scene {
             const tableImg = this.add.image(c.GAME_X_MID, c.GAME_Y_MID, 'table').setOrigin(0.5);
             this.table = new Table(this);
             this.createUI();
+
+            this.room.onStateChange((state) => {
+              this.updateGameState(state);
+            });
+
+            this.room.onMessage("readyToStart", () => {
+              // Show start button if not already shown
+              this.showStartButton();
+            });
+
+            this.room.onMessage("roundStarted", (data) => {
+              // Initialize the round UI
+              this.initializeRound(data);
+            });
           });
         } catch (e) {
             console.error(e);
@@ -107,7 +123,7 @@ export class PokerGame extends Scene {
 
     [this.foldButton, this.checkButton, this.betButton, this.raiseButton, this.callButton].forEach(button => {
         button.setInteractive(isMyTurn);
-        button.alpha = isMyTurn ? 1 : 0.5;
+        button.alpha = isMyTurn ? 1 : 0.2;
     });
 }
 
@@ -117,15 +133,25 @@ export class PokerGame extends Scene {
         }
     }
 
-    updateGameState(state) {
-        console.log('Updated Game State:', state)
+    private updateGameState(state: any) {
+    // Update local game state
+    this.table.gameState = state.currentPhase;
+    this.table.pot = state.pot;
+    this.table.currentBet = state.currentBet;
+    this.table.activePlayerIndex = state.activePlayerIndex;
 
-        // Update UI with new game state
-        // For example, display community cards and player hands
-        this.updateCommunityCards(state.communityCards)
-        this.updatePlayers(state.players)
-        this.updateButtons();
+    // Update UI
+    this.updateButtons();
+    this.renderCards();
+
+    // Show/hide action buttons for active player
+    if (state.activePlayerIndex === this.getLocalPlayerIndex()) {
+      const validActions = this.table.getValidActions(this.table.players[state.activePlayerIndex]);
+      this.showActionButtons(validActions);
+    } else {
+      this.hideActionButtons();
     }
+  }
 
     updateCommunityCards(cards) {
         // Display community cards on the table
@@ -140,5 +166,13 @@ export class PokerGame extends Scene {
             console.log(`Player ${player.id}:`, player)
         })
     }
+
+    private handlePlayerAction(action: PlayerAction): void {
+    // Send action to server instead of handling locally
+    this.room!.send("action", { 
+      type: action,
+      amount: action === 'Bet' || action === 'Raise' ? this.amountToBet : 0
+    });
+  }
 
 }
