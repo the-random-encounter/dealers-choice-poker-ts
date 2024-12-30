@@ -5,7 +5,7 @@ import { playground } from "@colyseus/playground";
 /**
  * Import your Room files
  */
-import { PokerRoom } from "./rooms/PokerRoom";
+import PokerRoom from "./rooms/PokerRoom";
 
 export default config({
 
@@ -13,7 +13,7 @@ export default config({
         /**
          * Define your room handlers:
          */
-        gameServer.define('my_room', PokerRoom);
+        gameServer.define('poker', PokerRoom);
 
     },
 

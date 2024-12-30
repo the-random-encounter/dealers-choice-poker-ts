@@ -25,7 +25,10 @@ client/README.md
 client/.odiumai.toml
 client/.eslintrc.js
 client/jest.config.ts
-client/tsconfig.json
+client/.hintrc
+
+
+
 
 .babelrc
 LICENSE
@@ -34,7 +37,6 @@ README.md
 .codiumai.toml
 .eslintrc.js
 jest.config.ts
-tsconfig.json
 
 screenshot.png
 misc/
